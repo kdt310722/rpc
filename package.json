@@ -1,0 +1,83 @@
+{
+    "name": "@kdt310722/rpc",
+    "type": "module",
+    "version": "0.0.0",
+    "packageManager": "pnpm@8.15.5",
+    "description": "RPC websocket client and server implements for JS/TS application",
+    "author": "Diep Dang <kdt310722@gmail.com>",
+    "license": "MIT",
+    "homepage": "https://github.com/kdt310722/rpc",
+    "repository": "github:kdt310722/rpc",
+    "bugs": {
+        "email": "kdt310722@gmail.com",
+        "url": "https://github.com/kdt310722/rpc/issues"
+    },
+    "sideEffects": false,
+    "exports": {
+        ".": {
+            "types": "./dist/types/index.d.ts",
+            "require": "./dist/index.cjs",
+            "default": "./dist/index.js"
+        }
+    },
+    "main": "dist/index.js",
+    "types": "dist/types/index.d.ts",
+    "files": [
+        "dist",
+        "src"
+    ],
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "dev": "vitest watch --typecheck",
+        "build": "rimraf dist && tsup && tsc --project ./tsconfig.build.json",
+        "test": "vitest run --typecheck",
+        "coverage": "pnpm test -- --coverage",
+        "release": "tsx scripts/release.ts && changelogen gh release && pnpm publish",
+        "up": "ncu -i",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "preinstall": "npx only-allow pnpm",
+        "prepare": "simple-git-hooks",
+        "prepublishOnly": "pnpm build"
+    },
+    "peerDependencies": {
+        "@kdt310722/utils": "^0.0.6"
+    },
+    "devDependencies": {
+        "@commitlint/cli": "^19.2.1",
+        "@commitlint/config-conventional": "^19.1.0",
+        "@kdt310722/eslint-config": "^0.0.5",
+        "@kdt310722/tsconfig": "^1.0.0",
+        "@kdt310722/utils": "^0.0.6",
+        "@swc/core": "^1.4.8",
+        "@types/node": "^20.11.30",
+        "@vitest/coverage-v8": "^1.4.0",
+        "changelogen": "^0.5.5",
+        "eslint": "^8.57.0",
+        "execa": "^8.0.1",
+        "lint-staged": "^15.2.2",
+        "npm-check-updates": "^16.14.17",
+        "only-allow": "^1.2.1",
+        "rimraf": "^5.0.5",
+        "simple-git-hooks": "^2.11.0",
+        "tsup": "^8.0.2",
+        "tsx": "^4.7.1",
+        "typescript": "^5.4.3",
+        "vitest": "^1.4.0"
+    },
+    "commitlint": {
+        "extends": "@commitlint/config-conventional"
+    },
+    "simple-git-hooks": {
+        "commit-msg": "npx --no -- commitlint --edit ${1}",
+        "pre-commit": "npx lint-staged"
+    },
+    "lint-staged": {
+        "*": "eslint --fix"
+    },
+    "dependencies": {
+        "isows": "^1.0.4"
+    }
+}
