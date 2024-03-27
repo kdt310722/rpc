@@ -63,6 +63,24 @@ export class RpcWebSocketClient extends Emitter<RpcClientEvents> {
         this.client.send(this.dataEncoder(createNotifyMessage(method, params)))
     }
 
+    public async subscribe(event: string, params?: any) {
+        const result = await this.call('subscribe', [event, params])
+
+        if (!result) {
+            throw Object.assign(new JsonRpcRequestError('Subscribe failed', { url: this.url }), { event, params, result })
+        }
+
+        return () => this.unsubscribe(event)
+    }
+
+    public async unsubscribe(event: string) {
+        const result = await this.call('unsubscribe', [event])
+
+        if (!result) {
+            throw Object.assign(new JsonRpcRequestError('Unsubscribe failed', { url: this.url }), { event, result })
+        }
+    }
+
     public async call<R = any>(method: string, params?: any) {
         const { promise } = tap(this.createRequest<R>(method, params), ({ payload }) => (
             this.client.send(this.dataEncoder(payload))
