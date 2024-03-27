@@ -1,6 +1,6 @@
 import { isArray } from '@kdt310722/utils/array'
 import { join } from '@kdt310722/utils/buffer'
-import { isFunction } from '@kdt310722/utils/function'
+import { isFunction, tap } from '@kdt310722/utils/function'
 import { type AnyObject, isObject, resolveNestedOptions } from '@kdt310722/utils/object'
 import type { Awaitable } from '@kdt310722/utils/promise'
 import { isString } from '@kdt310722/utils/string'
@@ -30,6 +30,7 @@ export interface RpcServerOptions {
     dataDecoder?: DataDecoder
     batchSize?: number
     onClientError?: (error: Error) => void
+    onUnhandledError?: (error: Error) => void
 }
 
 const UNIQUE_ID = Symbol('UNIQUE_ID')
@@ -38,6 +39,7 @@ export class RpcWebSocketServer {
     protected readonly heartbeat: Required<RpcServerHeartbeatOptions> & { enabled: boolean }
     protected readonly heartbeatMessage: WebSocketMessage
     protected readonly exceptionHandler?: (error: Error) => JsonRpcError
+    protected readonly onUnhandledError?: (error: Error) => void
     protected readonly clients = new Map<number, WebsocketClientContext>()
     protected readonly batchSize: number
 
@@ -51,12 +53,13 @@ export class RpcWebSocketServer {
     protected incrementId = 0
 
     public constructor(protected readonly options: RpcServerOptions = {}) {
-        const { exceptionHandler, dataEncoder, dataDecoder, batchSize = 100 } = options
+        const { exceptionHandler, onUnhandledError, dataEncoder, dataDecoder, batchSize = 100 } = options
         const heartbeat = resolveNestedOptions(options.heartbeat ?? true)
 
         this.heartbeat = heartbeat ? { enabled: true, interval: 30_000, timeout: 10_000, ...heartbeat } : { enabled: false, interval: 0, timeout: 0 }
         this.heartbeatMessage = options.heartbeatMessage ?? 'ping'
         this.exceptionHandler = exceptionHandler
+        this.onUnhandledError = onUnhandledError
         this.dataEncoder = dataEncoder ?? JSON.stringify
         this.dataDecoder = dataDecoder ?? ((data) => JSON.parse(join(data)))
         this.batchSize = batchSize
@@ -225,7 +228,9 @@ export class RpcWebSocketServer {
                     return createResponseMessage(message.id, undefined, this.exceptionHandler(err))
                 }
 
-                return createResponseMessage(message.id, undefined, new JsonRpcError(-32_600, 'Internal error'))
+                return tap(createResponseMessage(message.id, undefined, new JsonRpcError(-32_600, 'Internal error')), () => {
+                    this.onUnhandledError?.(err)
+                })
             }
         }
 
