@@ -63,6 +63,8 @@ export class RpcWebSocketServer {
         this.dataEncoder = dataEncoder ?? JSON.stringify
         this.dataDecoder = dataDecoder ?? ((data) => JSON.parse(join(data)))
         this.batchSize = batchSize
+
+        this.registerBuiltInMethods()
     }
 
     public addMethod(name: string, handler: (params: any[], context: WebsocketClientContext, server: RpcWebSocketServer) => Awaitable<any>) {
