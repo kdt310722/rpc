@@ -4,6 +4,7 @@ import { Emitter } from '@kdt310722/utils/event'
 import { tap, tryCatch } from '@kdt310722/utils/function'
 import { isKeysOf } from '@kdt310722/utils/object'
 import { type DeferredPromise, createDeferred, withTimeout } from '@kdt310722/utils/promise'
+import { isString } from '@kdt310722/utils/string'
 import { type JsonRpcError, JsonRpcRequestError } from '../errors'
 import type { DataDecoder, DataEncoder, JsonRpcResponseMessage, UrlLike, WebSocketMessage } from '../types'
 import { createNotifyMessage, createRequestMessage, isJsonRpcError, isJsonRpcErrorResponseMessage, isJsonRpcMessage, isJsonRpcNotifyMessage, isJsonRpcResponseMessage, toJsonRpcError } from '../utils'
@@ -121,7 +122,13 @@ export class RpcWebSocketClient extends Emitter<RpcClientEvents> {
         }
 
         if (isJsonRpcNotifyMessage(message)) {
-            return this.emit('notify', message.method, message.params)
+            this.emit('notify', message.method, message.params)
+
+            if (message.method === 'subscribe' && isKeysOf(message.params, ['event', 'result']) && isString(message.params.event)) {
+                this.emit(message.params.event, message.params.result)
+            }
+
+            return
         }
 
         if (isJsonRpcResponseMessage(message)) {
