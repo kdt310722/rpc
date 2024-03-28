@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.0.5
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.0.4...v0.0.5)
+
+### 🩹 Fixes
+
+- Handle method error ([ebd35fe](https://github.com/kdt310722/rpc/commit/ebd35fe))
+
+### 🏡 Chore
+
+- Update dependencies ([d61ba9f](https://github.com/kdt310722/rpc/commit/d61ba9f))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.0.4
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.3...v0.0.4)
