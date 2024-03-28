@@ -1,5 +1,6 @@
 import { isArray } from '@kdt310722/utils/array'
 import { join } from '@kdt310722/utils/buffer'
+import { notUndefined } from '@kdt310722/utils/common'
 import { Emitter } from '@kdt310722/utils/event'
 import { tap, tryCatch } from '@kdt310722/utils/function'
 import { isKeysOf } from '@kdt310722/utils/object'
@@ -65,7 +66,7 @@ export class RpcWebSocketClient extends Emitter<RpcClientEvents> {
     }
 
     public async subscribe(event: string, params?: any) {
-        const result = await this.call('subscribe', [event, params])
+        const result = await this.call('subscribe', [event, params].filter(notUndefined))
 
         if (!result) {
             throw Object.assign(new JsonRpcRequestError('Subscribe failed', { url: this.url }), { event, params, result })
