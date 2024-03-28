@@ -17,7 +17,7 @@ export interface UseRpcWebsocketClientOptions extends RpcWebSocketClientOptions,
 export interface UseRpcWebsocketClientSubscribeParams {
     event: string
     params?: any
-    onData: (data: any) => void
+    onData?: (data: any) => void
 }
 
 export function useRpcWebsocketClient(url: MaybeRefOrGetter<UrlLike>, options: UseRpcWebsocketClientOptions = {}) {
@@ -94,9 +94,11 @@ export function useRpcWebsocketClient(url: MaybeRefOrGetter<UrlLike>, options: U
             listeners.value.set(params.event, new Set())
         }
 
-        return Promise.resolve(listeners.value.get(params.event)?.add(params.onData)).then(async () => (
-            ensureInit().subscribe(params.event, params.params)
-        ))
+        if (params.onData) {
+            listeners.value.get(params.event)?.add(params.onData)
+        }
+
+        return ensureInit().subscribe(params.event, params.params)
     }
 
     watch(_url, () => open())
