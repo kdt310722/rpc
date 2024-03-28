@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.0.4
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.0.3...v0.0.4)
+
+### 🩹 Fixes
+
+- Subscribe params ([e264df3](https://github.com/kdt310722/rpc/commit/e264df3))
+
+### 💅 Refactors
+
+- Make onData optional ([63a0668](https://github.com/kdt310722/rpc/commit/63a0668))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.0.3
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.2...v0.0.3)
