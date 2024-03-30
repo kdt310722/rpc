@@ -7,4 +7,5 @@ export default defineConfig({
     shims: true,
     sourcemap: true,
     dts: false,
+    external: ['@vueuse/core', 'vue'],
 })
