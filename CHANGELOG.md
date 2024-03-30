@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.0.6
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.0.5...v0.0.6)
+
+### 🚀 Enhancements
+
+- Dont reset retries count ([cf002d1](https://github.com/kdt310722/rpc/commit/cf002d1))
+- Add ability to set custom request id ([9eeec76](https://github.com/kdt310722/rpc/commit/9eeec76))
+
+### 📦 Build
+
+- Add @vue/core, vue to external modules ([e35e8d7](https://github.com/kdt310722/rpc/commit/e35e8d7))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.0.5
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.4...v0.0.5)
