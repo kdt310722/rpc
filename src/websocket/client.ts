@@ -107,7 +107,6 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
     }
 
     protected onOpen() {
-        this.retried = 0
         this.emit('open')
 
         if (this.heartbeat.enabled) {
