@@ -83,16 +83,16 @@ export class RpcWebSocketClient extends Emitter<RpcClientEvents> {
         }
     }
 
-    public async call<R = any>(method: string, params?: any) {
-        const { promise } = tap(this.createRequest<R>(method, params), ({ payload }) => (
+    public async call<R = any>(method: string, params?: any, id?: string | number) {
+        const { promise } = tap(this.createRequest<R>(method, params, id), ({ payload }) => (
             this.client.send(this.dataEncoder(payload))
         ))
 
         return promise
     }
 
-    public async batchCall(requests: Array<{ method: string, params?: any }>) {
-        const data = requests.map(({ method, params }) => this.createRequest(method, params))
+    public async batchCall(requests: Array<{ method: string, params?: any, id?: string | number }>) {
+        const data = requests.map(({ method, params, id }) => this.createRequest(method, params, id))
 
         this.client.send(
             this.dataEncoder(data.map(({ payload }) => payload)),
@@ -101,8 +101,8 @@ export class RpcWebSocketClient extends Emitter<RpcClientEvents> {
         return Promise.all(data.map(({ promise }) => promise))
     }
 
-    protected createRequest<R = any>(method: string, params?: any) {
-        const id = ++this.incrementId
+    protected createRequest<R = any>(method: string, params?: any, _id?: string | number) {
+        const id = _id ?? ++this.incrementId
         const request = this.requests[id] = createDeferred()
         const payload = createRequestMessage(id, method, params)
 
