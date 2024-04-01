@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.0.8
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.0.7...v0.0.8)
+
+### 🩹 Fixes
+
+- Batch call ([efbc58c](https://github.com/kdt310722/rpc/commit/efbc58c))
+
+### 🏡 Chore
+
+- Update dependencies ([fd09b92](https://github.com/kdt310722/rpc/commit/fd09b92))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.0.7
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.6...v0.0.7)
