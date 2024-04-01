@@ -6,7 +6,7 @@ import type { Awaitable } from '@kdt310722/utils/promise'
 import { isString } from '@kdt310722/utils/string'
 import { WebSocket } from 'isows'
 import { JsonRpcError } from '../errors'
-import type { DataDecoder, DataEncoder, JsonRpcResponseMessage, WebSocketMessage } from '../types'
+import type { DataDecoder, DataEncoder, WebSocketMessage } from '../types'
 import { createErrorResponse, createEventMessage, createResponseMessage, isJsonRpcMessage, isJsonRpcRequestMessage } from '../utils'
 
 export interface WebsocketClientContext {
@@ -245,13 +245,7 @@ export class RpcWebSocketServer {
                 return this.send(context.socket, createErrorResponse(null, new JsonRpcError(-32_603, 'Batch size exceeded')))
             }
 
-            const responses: Array<JsonRpcResponseMessage | null> = []
-
-            for (const items of data) {
-                responses.push(...(await Promise.all(items.map((item: any) => this.handleRpcMessage(context, item)))))
-            }
-
-            return this.send(context.socket, responses)
+            return this.send(context.socket, await Promise.all(data.map((item) => this.handleRpcMessage(context, item).then((i) => i ?? null))))
         }
 
         return this.send(context.socket, await this.handleRpcMessage(context, data))
