@@ -8,7 +8,7 @@ import { type DeferredPromise, createDeferred, withTimeout } from '@kdt310722/ut
 import { isString } from '@kdt310722/utils/string'
 import { type JsonRpcError, JsonRpcRequestError } from '../errors'
 import type { DataDecoder, DataEncoder, JsonRpcResponseMessage, UrlLike, WebSocketMessage } from '../types'
-import { createNotifyMessage, createRequestMessage, isJsonRpcError, isJsonRpcErrorResponseMessage, isJsonRpcMessage, isJsonRpcNotifyMessage, isJsonRpcResponseMessage, toJsonRpcError } from '../utils'
+import { createNotifyMessage, createRequestMessage, createResponseMessage, isJsonRpcError, isJsonRpcErrorResponseMessage, isJsonRpcMessage, isJsonRpcNotifyMessage, isJsonRpcRequestMessage, isJsonRpcResponseMessage, toJsonRpcError } from '../utils'
 import type { WebSocketClientEvents, WebSocketClientOptions } from '../websocket'
 import { WebSocketClient } from '../websocket'
 
@@ -120,6 +120,10 @@ export class RpcWebSocketClient extends Emitter<RpcClientEvents> {
     protected handleMessage(message: WebSocketMessage) {
         if (!isJsonRpcMessage(message)) {
             return this.emit('unknown-message', message)
+        }
+
+        if (isJsonRpcRequestMessage(message) && message.method === 'ping') {
+            return this.client.send(this.dataEncoder(createResponseMessage(message.id, 'pong')))
         }
 
         if (isJsonRpcNotifyMessage(message)) {
