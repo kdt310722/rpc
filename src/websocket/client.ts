@@ -162,6 +162,8 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
         })
 
         client.addEventListener('close', (event) => {
+            this.resetHeartbeat()
+
             if (!isConnected.isSettled) {
                 return isConnected.reject(new WebsocketClientError(this, 'Connection closed before it was established'))
             }
