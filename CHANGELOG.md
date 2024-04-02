@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.0.9
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.0.8...v0.0.9)
+
+### 🩹 Fixes
+
+- Change default ping message ([7f5245e](https://github.com/kdt310722/rpc/commit/7f5245e))
+- Reset heartbeat after client close ([8502eab](https://github.com/kdt310722/rpc/commit/8502eab))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.0.8
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.7...v0.0.8)
