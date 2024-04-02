@@ -7,7 +7,7 @@ import { isString } from '@kdt310722/utils/string'
 import { WebSocket } from 'isows'
 import { JsonRpcError } from '../errors'
 import type { DataDecoder, DataEncoder, WebSocketMessage } from '../types'
-import { createErrorResponse, createEventMessage, createResponseMessage, isJsonRpcMessage, isJsonRpcRequestMessage } from '../utils'
+import { createErrorResponse, createEventMessage, createRequestMessage, createResponseMessage, isJsonRpcMessage, isJsonRpcRequestMessage } from '../utils'
 
 export interface WebsocketClientContext {
     id: number
@@ -56,13 +56,13 @@ export class RpcWebSocketServer {
         const { exceptionHandler, onUnhandledError, dataEncoder, dataDecoder, batchSize = 100 } = options
         const heartbeat = resolveNestedOptions(options.heartbeat ?? true)
 
-        this.heartbeat = heartbeat ? { enabled: true, interval: 30_000, timeout: 10_000, ...heartbeat } : { enabled: false, interval: 0, timeout: 0 }
-        this.heartbeatMessage = options.heartbeatMessage ?? 'ping'
         this.exceptionHandler = exceptionHandler
         this.onUnhandledError = onUnhandledError
         this.dataEncoder = dataEncoder ?? JSON.stringify
         this.dataDecoder = dataDecoder ?? ((data) => JSON.parse(join(data)))
         this.batchSize = batchSize
+        this.heartbeat = heartbeat ? { enabled: true, interval: 30_000, timeout: 10_000, ...heartbeat } : { enabled: false, interval: 0, timeout: 0 }
+        this.heartbeatMessage = options.heartbeatMessage ?? this.dataEncoder(createRequestMessage('ping', 'ping'))
 
         this.registerBuiltInMethods()
     }
