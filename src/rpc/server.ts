@@ -48,7 +48,7 @@ export class RpcWebSocketServer {
 
     protected readonly methods = new Map<string, (params: any[], context: WebsocketClientContext) => Promise<any>>()
     protected readonly rpcEvents = new Map<string, Set<number>>()
-    protected readonly rpcDynamicEvents: Array<(name: string) => boolean> = []
+    protected readonly rpcDynamicEvents: Array<(name: string, context: WebsocketClientContext) => boolean> = []
 
     protected incrementId = 0
 
@@ -71,7 +71,7 @@ export class RpcWebSocketServer {
         this.methods.set(name, (params, context) => handler(params, context, this))
     }
 
-    public addEvent(name: string | ((name: string) => boolean)) {
+    public addEvent(name: string | ((name: string, context: WebsocketClientContext) => boolean)) {
         if (isFunction(name)) {
             this.rpcDynamicEvents.push(name)
 
@@ -176,20 +176,20 @@ export class RpcWebSocketServer {
     protected registerBuiltInMethods() {
         this.addMethod('ping', () => 'pong')
 
-        this.addMethod('subscribe', (params, { id }) => {
+        this.addMethod('subscribe', (params, context) => {
             if (params.length !== 1 || !isString(params[0])) {
                 throw new JsonRpcError(-32_602, 'Invalid params')
             }
 
             if (!this.rpcEvents.has(params[0])) {
-                if (this.rpcDynamicEvents.some((handler) => handler(params[0]))) {
+                if (this.rpcDynamicEvents.some((handler) => handler(params[0], context))) {
                     this.rpcEvents.set(params[0], new Set())
                 } else {
                     throw new JsonRpcError(-32_602, 'Event not found')
                 }
             }
 
-            this.rpcEvents.get(params[0])?.add(id)
+            this.rpcEvents.get(params[0])?.add(context.id)
 
             return true
         })
