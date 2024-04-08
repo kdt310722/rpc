@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.0.12
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.0.11...v0.0.12)
+
+### 🩹 Fixes
+
+- Error response message ([b0ce170](https://github.com/kdt310722/rpc/commit/b0ce170))
+- Dont reply notify message ([4de0e03](https://github.com/kdt310722/rpc/commit/4de0e03))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.0.11
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.10...v0.0.11)
