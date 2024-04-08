@@ -36,6 +36,7 @@ export interface RpcServerOptions {
 }
 
 const UNIQUE_ID = Symbol('UNIQUE_ID')
+const SKIP_SEND = Symbol('SKIP_SEND')
 
 export class RpcWebSocketServer {
     protected readonly heartbeat: Required<RpcServerHeartbeatOptions> & { enabled: boolean }
@@ -213,7 +214,7 @@ export class RpcWebSocketServer {
         }
 
         if (!isJsonRpcRequestMessage(message)) {
-            return
+            return SKIP_SEND
         }
 
         const method = this.methods.get(message.method)
@@ -250,6 +251,10 @@ export class RpcWebSocketServer {
             return this.send(context.socket, await Promise.all(data.map((item) => this.handleRpcMessage(context, item).then((i) => i ?? null))))
         }
 
-        return this.send(context.socket, await this.handleRpcMessage(context, data))
+        const response = await this.handleRpcMessage(context, data)
+
+        if (response !== SKIP_SEND) {
+            return this.send(context.socket, response)
+        }
     }
 }
