@@ -15,6 +15,8 @@ export interface WebsocketClientContext {
     isAlive: boolean
     heartbeatTimer?: ReturnType<typeof setInterval>
     pongTimeout?: ReturnType<typeof setTimeout>
+
+    [key: string]: any
 }
 
 export interface RpcServerHeartbeatOptions {
@@ -95,7 +97,7 @@ export class RpcWebSocketServer {
         socket.send(this.dataEncoder(data))
     }
 
-    public handleConnection(socket: WebSocket) {
+    public handleConnection(socket: WebSocket, customContext: AnyObject = {}) {
         const id = socket[UNIQUE_ID] = ++this.incrementId
         let heartbeatTimer: ReturnType<typeof setInterval> | undefined
 
@@ -103,7 +105,7 @@ export class RpcWebSocketServer {
             heartbeatTimer = setInterval(() => this.runHeartbeat(socket, id), this.heartbeat.interval)
         }
 
-        this.clients.set(id, { id, socket, isAlive: true, heartbeatTimer })
+        this.clients.set(id, { id, socket, isAlive: true, heartbeatTimer, ...customContext })
 
         const context = this.clients.get(id)!
 
