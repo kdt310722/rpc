@@ -41,7 +41,7 @@ export function createEventMessage(event: string, data: any) {
 }
 
 export function createResponseMessage(id: number | string | null, result?: any, error?: JsonRpcError) {
-    return { jsonrpc: '2.0', id, ...(notUndefined(result) ? { result } : {}), ...(notUndefined(error) ? { code: error.code, message: error.message, data: error.data } : {}) }
+    return { jsonrpc: '2.0', id, ...(notUndefined(result) ? { result } : {}), ...(notUndefined(error) ? { error: { code: error.code, message: error.message, data: error.data } } : {}) }
 }
 
 export function createErrorResponse(id: number | string | null, error: JsonRpcError) {
