@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.0.11
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.0.10...v0.0.11)
+
+### 🚀 Enhancements
+
+- Add context when resolve dynamic event name ([8490492](https://github.com/kdt310722/rpc/commit/8490492))
+- Custom context ([d7b7038](https://github.com/kdt310722/rpc/commit/d7b7038))
+
+### 🏡 Chore
+
+- Update dependencies ([32cc9f5](https://github.com/kdt310722/rpc/commit/32cc9f5))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.0.10
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.9...v0.0.10)
