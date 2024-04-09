@@ -9,6 +9,7 @@ export type WebSocketClientState = 'CONNECTING' | 'OPEN' | 'CLOSING' | 'CLOSED'
 export interface UseWebSocketClientOptions extends Omit<WebSocketClientOptions, 'autoConnect'> {
     immediate?: boolean
     autoClose?: boolean
+    watchUrl?: boolean
     onOpen?: () => void
     onClose?: (code: number, reason: string) => void
     onReconnect?: (attempt: number) => void
@@ -17,7 +18,7 @@ export interface UseWebSocketClientOptions extends Omit<WebSocketClientOptions, 
 }
 
 export function useWebSocketClient(url: MaybeRefOrGetter<UrlLike>, options: UseWebSocketClientOptions = {}) {
-    const { immediate = true, autoClose = true, onOpen, onClose, onReconnect, onReconnectFailed, onMessage, ..._options } = options
+    const { immediate = true, autoClose = true, watchUrl = true, onOpen, onClose, onReconnect, onReconnectFailed, onMessage, ..._options } = options
 
     const _url = toRef(url)
     const error = ref<Error>()
@@ -73,7 +74,9 @@ export function useWebSocketClient(url: MaybeRefOrGetter<UrlLike>, options: UseW
         client.value.send(data)
     }
 
-    watch(_url, () => open())
+    if (watchUrl) {
+        watch(_url, () => open())
+    }
 
     if (autoClose) {
         useEventListener('beforeunload', () => close())

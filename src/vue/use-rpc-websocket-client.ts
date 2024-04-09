@@ -21,7 +21,7 @@ export interface UseRpcWebsocketClientSubscribeParams {
 }
 
 export function useRpcWebsocketClient(url: MaybeRefOrGetter<UrlLike>, options: UseRpcWebsocketClientOptions = {}) {
-    const { immediate = true, autoClose = true, onOpen, onClose, onReconnect, onReconnectFailed, onUnknownMessage, onRpcError, onNotify, ..._options } = options
+    const { immediate = true, autoClose = true, watchUrl = true, onOpen, onClose, onReconnect, onReconnectFailed, onUnknownMessage, onRpcError, onNotify, ..._options } = options
 
     const _url = toRef(url)
     const client = ref<RpcWebSocketClient>()
@@ -101,7 +101,9 @@ export function useRpcWebsocketClient(url: MaybeRefOrGetter<UrlLike>, options: U
         return ensureInit().subscribe(params.event, params.params)
     }
 
-    watch(_url, () => open())
+    if (watchUrl) {
+        watch(_url, () => open())
+    }
 
     if (autoClose) {
         useEventListener('beforeunload', () => close())
