@@ -1,7 +1,7 @@
 {
     "name": "@kdt310722/rpc",
     "type": "module",
-    "version": "0.0.12",
+    "version": "0.0.13",
     "packageManager": "pnpm@8.15.6",
     "description": "RPC websocket client and server implements for JS/TS application",
     "author": "Diep Dang <kdt310722@gmail.com>",
