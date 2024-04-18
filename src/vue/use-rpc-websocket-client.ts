@@ -69,6 +69,7 @@ export function useRpcWebsocketClient(url: MaybeRefOrGetter<UrlLike>, options: U
     const close = (code?: number, reason?: string) => {
         state.value = 'CLOSING'
         client.value?.disconnect(code, reason)
+        listeners.value.clear()
     }
 
     const open = () => {
@@ -98,7 +99,25 @@ export function useRpcWebsocketClient(url: MaybeRefOrGetter<UrlLike>, options: U
             listeners.value.get(params.event)?.add(params.onData)
         }
 
-        return ensureInit().subscribe(params.event, params.params)
+        const stop = await ensureInit().subscribe(params.event, params.params)
+
+        return async () => {
+            const fns = listeners.value.get(params.event)
+
+            if (!fns) {
+                return stop()
+            }
+
+            if (params.onData) {
+                fns.delete(params.onData)
+            }
+
+            if (fns.size === 0) {
+                listeners.value.delete(params.event)
+
+                return stop()
+            }
+        }
     }
 
     if (watchUrl) {
