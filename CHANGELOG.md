@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.0.19
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.0.18...v0.0.19)
+
+### 🚀 Enhancements
+
+- Add emitter for rpc webserver ([39aec35](https://github.com/kdt310722/rpc/commit/39aec35))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.0.18
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.16...v0.0.18)
