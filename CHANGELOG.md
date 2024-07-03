@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.0.18
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.0.16...v0.0.18)
+
+### 🏡 Chore
+
+- Downgrade execa to v8 ([8b40157](https://github.com/kdt310722/rpc/commit/8b40157))
+- Increase version number ([ebc3c62](https://github.com/kdt310722/rpc/commit/ebc3c62))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.0.15
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.14...v0.0.15)
