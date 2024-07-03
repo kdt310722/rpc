@@ -1,5 +1,6 @@
 import { isArray } from '@kdt310722/utils/array'
 import { join } from '@kdt310722/utils/buffer'
+import { Emitter } from '@kdt310722/utils/event'
 import { isFunction, tap } from '@kdt310722/utils/function'
 import { type AnyObject, isObject, resolveNestedOptions } from '@kdt310722/utils/object'
 import type { Awaitable } from '@kdt310722/utils/promise'
@@ -38,7 +39,14 @@ export interface RpcServerOptions {
 const UNIQUE_ID = Symbol('UNIQUE_ID')
 const SKIP_SEND = Symbol('SKIP_SEND')
 
+export type RpcWebSocketServerEvents = {
+    subscribe: (event: string, context: WebsocketClientContext) => boolean
+    unsubscribe: (event: string, context: WebsocketClientContext) => boolean
+}
+
 export class RpcWebSocketServer {
+    public readonly emitter: Emitter<RpcWebSocketServerEvents>
+
     protected readonly heartbeat: Required<RpcServerHeartbeatOptions> & { enabled: boolean }
     protected readonly heartbeatMessage: WebSocketMessage
     protected readonly exceptionHandler?: (error: Error) => JsonRpcError
@@ -59,6 +67,7 @@ export class RpcWebSocketServer {
         const { exceptionHandler, onUnhandledError, dataEncoder, dataDecoder, batchSize = 100 } = options
         const heartbeat = resolveNestedOptions(options.heartbeat ?? true)
 
+        this.emitter = new Emitter()
         this.exceptionHandler = exceptionHandler
         this.onUnhandledError = onUnhandledError
         this.dataEncoder = dataEncoder ?? JSON.stringify
@@ -126,8 +135,12 @@ export class RpcWebSocketServer {
                 clearTimeout(context.pongTimeout)
             }
 
-            for (const [, clients] of this.rpcEvents) {
+            for (const [event, clients] of this.rpcEvents) {
                 clients.delete(id)
+
+                if (context) {
+                    this.emitter.emit('unsubscribe', event, context)
+                }
             }
 
             this.clients.delete(id)
@@ -197,16 +210,18 @@ export class RpcWebSocketServer {
             }
 
             this.rpcEvents.get(params[0])?.add(context.id)
+            this.emitter.emit('subscribe', params[0], context)
 
             return true
         })
 
-        this.addMethod('unsubscribe', (params, { id }) => {
+        this.addMethod('unsubscribe', (params, context) => {
             if (params.length !== 1 || !isString(params[0])) {
                 throw new JsonRpcError(-32_602, 'Invalid params')
             }
 
-            this.rpcEvents.get(params[0])?.delete(id)
+            this.rpcEvents.get(params[0])?.delete(context.id)
+            this.emitter.emit('unsubscribe', params[0], context)
 
             return true
         })
