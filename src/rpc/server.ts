@@ -86,6 +86,10 @@ export class RpcWebSocketServer {
         }
     }
 
+    public subscriptionsCount(name: string) {
+        return this.rpcEvents.get(name)?.size ?? 0
+    }
+
     public emit(name: string, data: any) {
         const message = this.dataEncoder(createEventMessage(name, data))
 
