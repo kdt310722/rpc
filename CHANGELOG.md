@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.0.20
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.0.19...v0.0.20)
+
+### 🚀 Enhancements
+
+- Event params ([ca31499](https://github.com/kdt310722/rpc/commit/ca31499))
+
+### 🏡 Chore
+
+- Update ([ceb9d3d](https://github.com/kdt310722/rpc/commit/ceb9d3d))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.0.19
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.18...v0.0.19)
