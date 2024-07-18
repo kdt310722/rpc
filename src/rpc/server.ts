@@ -40,7 +40,7 @@ const UNIQUE_ID = Symbol('UNIQUE_ID')
 const SKIP_SEND = Symbol('SKIP_SEND')
 
 export type RpcWebSocketServerEvents = {
-    subscribe: (event: string, context: WebsocketClientContext) => boolean
+    subscribe: (event: string, params: any, context: WebsocketClientContext) => boolean
     unsubscribe: (event: string, context: WebsocketClientContext) => boolean
 }
 
@@ -210,7 +210,7 @@ export class RpcWebSocketServer {
             }
 
             this.rpcEvents.get(params[0])?.add(context.id)
-            this.emitter.emit('subscribe', params[0], context)
+            this.emitter.emit('subscribe', params[0], params[1], context)
 
             return true
         })
