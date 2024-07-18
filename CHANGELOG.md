@@ -237,4 +237,3 @@ See [standard-version](https://github.com/conventional-changelog/standard-versio
 ### ❤️ Contributors
 
 - Diep Dang <kdt310722@gmail.com>
-
