@@ -67,7 +67,7 @@
         "eslint": "^8.57.0",
         "execa": "^8.0.1",
         "lint-staged": "^15.2.7",
-        "npm-check-updates": "^16.14.20",
+        "npm-check-updates": "^17.0.0",
         "only-allow": "^1.2.1",
         "rimraf": "^6.0.0",
         "simple-git-hooks": "^2.11.1",
