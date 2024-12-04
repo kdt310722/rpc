@@ -1,3 +1,8 @@
+export interface CloseEvent {
+    readonly code: number
+    readonly reason: string
+}
+
 export type UrlLike = URL | string
 
 export type WebSocketMessage = ArrayBuffer | Buffer | string

@@ -1,6 +1,8 @@
 import { execa } from 'execa'
 
-const run = async (command: string, args: string[]) => execa(command, args).pipeStdout?.(process.stdout)
+const run = async (command: string, args: string[]) => execa(command, args).then(({ stdout }) => {
+    process.stdout.write(stdout)
+})
 
 await run('changelogen', [
     '--clean',

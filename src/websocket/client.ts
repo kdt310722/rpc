@@ -5,7 +5,7 @@ import { resolveNestedOptions } from '@kdt310722/utils/object'
 import { createDeferred, sleep, withTimeout } from '@kdt310722/utils/promise'
 import { WebSocket } from 'isows'
 import { WebsocketClientError } from '../errors'
-import type { UrlLike, WebSocketMessage } from '../types'
+import type { CloseEvent, UrlLike, WebSocketMessage } from '../types'
 
 export interface AutoReconnectOptions {
     delay?: number
@@ -65,7 +65,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
         this.heartbeatMessage = heartbeatMessage
 
         if (autoConnect) {
-            this.connect().catch((error) => {
+            this.connect().catch((error: unknown) => {
                 this.onError(error)
             })
         }
@@ -91,7 +91,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
     }
 
     public send(data: WebSocketMessage) {
-        this.connect().then(() => this.websocket).then((ws) => ws?.send(data)).catch((error) => {
+        this.connect().then(() => this.websocket).then((ws) => ws?.send(data)).catch((error: unknown) => {
             this.onError(error)
         })
     }
@@ -128,7 +128,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
             if (this.retried < this.autoReconnect.attempts) {
                 this.emit('reconnect', this.retried)
 
-                sleep(this.autoReconnect.delay).then(() => this.createConnection()).catch((error) => {
+                sleep(this.autoReconnect.delay).then(() => this.createConnection()).catch((error: unknown) => {
                     this.onError(error)
                 })
             } else if (this.autoReconnect.attempts > 0) {
@@ -137,12 +137,14 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
         }
     }
 
-    protected onError(error: WebsocketClientError) {
+    protected onError(error: unknown) {
+        const _error = error instanceof WebsocketClientError ? error : new WebsocketClientError(this, 'An error occurred', { cause: error })
+
         if (this.listenerCount('error') === 0) {
-            throw error
+            throw _error
         }
 
-        this.emit('error', error)
+        this.emit('error', _error)
     }
 
     protected async createConnection() {
@@ -176,7 +178,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
             this.onOpen()
         })
 
-        await withTimeout(isConnected, this.connectTimeout, new WebsocketClientError(this, 'Connect timeout')).catch((error) => {
+        await withTimeout(isConnected, this.connectTimeout, new WebsocketClientError(this, 'Connect timeout')).catch((error: unknown) => {
             client.close()
             this.onError(error)
         })

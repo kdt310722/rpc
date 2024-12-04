@@ -169,7 +169,7 @@ export class RpcWebSocketServer {
                 return this.send(socket, createErrorResponse(null, new JsonRpcError(-32_600, 'Invalid request')))
             }
 
-            this.onMessage(context, rpcMessage).catch((error) => {
+            this.onMessage(context, rpcMessage).catch((error: unknown) => {
                 throw new Error('Error while processing message', { cause: error })
             })
         })

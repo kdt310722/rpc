@@ -51,8 +51,8 @@ export function useWebSocketClient(url: MaybeRefOrGetter<UrlLike>, options: UseW
             onMessage?.(msg)
         })
 
-        client.value.connect().catch((error) => {
-            error.value = error
+        client.value.connect().catch((_error: unknown) => {
+            error.value = _error instanceof Error ? _error : new Error('An error occurred', { cause: _error })
         })
     }
 

@@ -61,8 +61,8 @@ export function useRpcWebsocketClient(url: MaybeRefOrGetter<UrlLike>, options: U
             }
         })
 
-        client.value.connect().catch((error) => {
-            error.value = error
+        client.value.connect().catch((_error: unknown) => {
+            error.value = _error instanceof Error ? _error : new Error('An error occurred', { cause: _error })
         })
     }
 

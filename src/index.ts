@@ -1,5 +1,5 @@
 export * from './errors'
 export * from './rpc'
-export * from './types'
+export type * from './types'
 export * from './utils'
 export * from './websocket'
