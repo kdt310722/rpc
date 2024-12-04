@@ -172,7 +172,7 @@ export class RpcWebSocketClient extends Emitter<RpcClientEvents> {
     protected registerClientEvents(client: WebSocketClient) {
         client.on('message', (data) => this.onMessage(data))
 
-        for (const event of ['open', 'close', 'reconnect', 'reconnect-failed', 'error']) {
+        for (const event of ['open', 'close', 'reconnect', 'reconnected', 'reconnect-failed', 'error']) {
             client.on(event, (...args: any) => this.emit(event, ...args))
         }
 

@@ -32,6 +32,7 @@ export type WebSocketClientEvents = {
     'open': () => void
     'message': (data: WebSocketMessage) => void
     'reconnect': (attempt: number) => void
+    'reconnected': () => void
     'reconnect-failed': () => void
 }
 
@@ -128,7 +129,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
             if (this.retried < this.autoReconnect.attempts) {
                 this.emit('reconnect', this.retried)
 
-                sleep(this.autoReconnect.delay).then(() => this.createConnection()).catch((error: unknown) => {
+                sleep(this.autoReconnect.delay).then(() => this.createConnection()).then(() => this.emit('reconnected')).catch((error: unknown) => {
                     this.onError(error)
                 })
             } else if (this.autoReconnect.attempts > 0) {
