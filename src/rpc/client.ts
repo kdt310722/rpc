@@ -6,13 +6,14 @@ import { tap, tryCatch } from '@kdt310722/utils/function'
 import { isKeysOf } from '@kdt310722/utils/object'
 import { type DeferredPromise, createDeferred, withTimeout } from '@kdt310722/utils/promise'
 import { isString } from '@kdt310722/utils/string'
-import { type JsonRpcError, JsonRpcRequestError } from '../errors'
+import { type JsonRpcError, JsonRpcRequestError, WebsocketClientError } from '../errors'
 import type { DataDecoder, DataEncoder, JsonRpcResponseMessage, UrlLike, WebSocketMessage } from '../types'
 import { createNotifyMessage, createRequestMessage, createResponseMessage, isJsonRpcError, isJsonRpcErrorResponseMessage, isJsonRpcMessage, isJsonRpcNotifyMessage, isJsonRpcRequestMessage, isJsonRpcResponseMessage, toJsonRpcError } from '../utils'
 import type { WebSocketClientEvents, WebSocketClientOptions } from '../websocket'
 import { WebSocketClient } from '../websocket'
 
 export interface RpcWebSocketClientOptions extends WebSocketClientOptions {
+    autoResubscribe?: boolean
     requestTimeout?: number
     dataEncoder?: DataEncoder
     dataDecoder?: DataDecoder
@@ -26,20 +27,24 @@ export type RpcClientEvents = Omit<WebSocketClientEvents, 'message'> & {
 
 export class RpcWebSocketClient extends Emitter<RpcClientEvents> {
     protected readonly client: WebSocketClient
+    protected readonly autoResubscribe: boolean
     protected readonly requestTimeout: number
     protected readonly requests: Record<number | string, DeferredPromise<JsonRpcResponseMessage>>
     protected readonly dataEncoder: DataEncoder
     protected readonly dataDecoder: DataDecoder
+    protected readonly subscriptions: Map<string, any>
 
     protected incrementId = 0
 
     public constructor(url: UrlLike, options: RpcWebSocketClientOptions = {}) {
         super()
 
-        const { requestTimeout = 10_000, dataEncoder, dataDecoder, ...clientOptions } = options
+        const { autoResubscribe = true, requestTimeout = 10_000, dataEncoder, dataDecoder, ...clientOptions } = options
 
+        this.autoResubscribe = autoResubscribe
         this.requestTimeout = requestTimeout
         this.requests = {}
+        this.subscriptions = new Map()
         this.dataEncoder = dataEncoder ?? JSON.stringify
         this.dataDecoder = dataDecoder ?? ((data) => JSON.parse(join(data)))
 
@@ -72,6 +77,8 @@ export class RpcWebSocketClient extends Emitter<RpcClientEvents> {
             throw Object.assign(new JsonRpcRequestError('Subscribe failed', { url: this.url }), { event, params, result })
         }
 
+        this.subscriptions.set(event, params)
+
         return () => this.unsubscribe(event)
     }
 
@@ -81,6 +88,8 @@ export class RpcWebSocketClient extends Emitter<RpcClientEvents> {
         if (!result) {
             throw Object.assign(new JsonRpcRequestError('Unsubscribe failed', { url: this.url }), { event, result })
         }
+
+        this.subscriptions.delete(event)
     }
 
     public async call<R = any>(method: string, params?: any, id?: string | number) {
@@ -171,6 +180,16 @@ export class RpcWebSocketClient extends Emitter<RpcClientEvents> {
 
     protected registerClientEvents(client: WebSocketClient) {
         client.on('message', (data) => this.onMessage(data))
+
+        client.on('reconnected', () => {
+            if (this.autoResubscribe) {
+                for (const [event, params] of this.subscriptions) {
+                    this.subscribe(event, params).catch((error: unknown) => {
+                        this.emit('error', Object.assign(error instanceof WebsocketClientError ? error : new WebsocketClientError(client, 'Failed to resubscribe', { cause: error }), { event, params }))
+                    })
+                }
+            }
+        })
 
         for (const event of ['open', 'close', 'reconnect', 'reconnected', 'reconnect-failed', 'error']) {
             client.on(event, (...args: any) => this.emit(event, ...args))
