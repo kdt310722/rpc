@@ -34,6 +34,7 @@ export type WebSocketClientEvents = {
     'reconnect': (attempt: number) => void
     'reconnected': () => void
     'reconnect-failed': () => void
+    'disconnected': (code: number, reason: string) => void
 }
 
 export class WebSocketClient extends Emitter<WebSocketClientEvents> {
@@ -82,9 +83,10 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
         this.websocket = this.createConnection()
     }
 
-    public disconnect(code?: number, reason?: string) {
-        this.explicitlyClosed = true
-        this.resetHeartbeat()
+    public disconnect(code?: number, reason?: string, isExplicitlyClosed = true) {
+        if (isExplicitlyClosed) {
+            this.explicitlyClosed = true
+        }
 
         this.websocket?.then((ws) => {
             ws.close(code, reason)
@@ -116,20 +118,22 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
     }
 
     protected runHeartbeat() {
-        this.pongTimeout = setTimeout(() => tap(this.explicitlyClosed = false, () => this.disconnect()), this.heartbeat.timeout)
+        this.pongTimeout = setTimeout(() => this.disconnect(undefined, undefined, false), this.heartbeat.timeout)
         this.send(this.heartbeatMessage)
     }
 
     protected onClose({ code, reason }: CloseEvent) {
         this.emit('close', code, reason)
 
-        if (!this.explicitlyClosed) {
+        if (this.explicitlyClosed) {
+            this.emit('disconnected', code, reason)
+        } else {
             this.retried++
 
             if (this.retried < this.autoReconnect.attempts) {
                 this.emit('reconnect', this.retried)
 
-                sleep(this.autoReconnect.delay).then(() => this.createConnection()).then(() => this.emit('reconnected')).catch((error: unknown) => {
+                sleep(this.autoReconnect.delay).then(() => this.createConnection()).then(() => tap(this.emit('reconnected'), () => (this.retried = 0))).catch((error: unknown) => {
                     this.onError(error)
                 })
             } else if (this.autoReconnect.attempts > 0) {
