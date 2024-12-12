@@ -51,7 +51,7 @@
         "prepublishOnly": "pnpm build"
     },
     "peerDependencies": {
-        "@kdt310722/utils": "latest"
+        "@kdt310722/utils": "^0.0.9"
     },
     "dependencies": {
         "isows": "^1.0.6"
