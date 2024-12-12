@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.0.24
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.0.23...v0.0.24)
+
+### 🚀 Enhancements
+
+- Events ([c086e06](https://github.com/kdt310722/rpc/commit/c086e06))
+
+### 🏡 Chore
+
+- Update deps ([ccda9c8](https://github.com/kdt310722/rpc/commit/ccda9c8))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.0.23
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.22...v0.0.23)
