@@ -40,6 +40,8 @@ const UNIQUE_ID = Symbol('UNIQUE_ID')
 const SKIP_SEND = Symbol('SKIP_SEND')
 
 export type RpcWebSocketServerEvents = {
+    connected: (context: WebsocketClientContext) => void
+    disconnected: (id: number) => void
     subscribe: (event: string, params: any, context: WebsocketClientContext) => boolean
     unsubscribe: (event: string, context: WebsocketClientContext) => boolean
 }
@@ -121,7 +123,9 @@ export class RpcWebSocketServer {
 
         this.clients.set(id, { id, socket, isAlive: true, heartbeatTimer, ...customContext })
 
-        const context = this.clients.get(id)!
+        const context = tap(this.clients.get(id)!, (ctx) => {
+            this.emitter.emit('connected', ctx)
+        })
 
         socket.addEventListener('error', (event) => {
             this.options.onClientError?.(Object.assign(new Error('Websocket error'), { event }))
@@ -144,6 +148,7 @@ export class RpcWebSocketServer {
             }
 
             this.clients.delete(id)
+            this.emitter.emit('disconnected', id)
         })
 
         socket.addEventListener('message', ({ data }) => {
