@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.1.1
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.1.0...v0.1.1)
+
+### 🩹 Fixes
+
+- Imports ([742ae4e](https://github.com/kdt310722/rpc/commit/742ae4e))
+
+### 🏡 Chore
+
+- Remove test command in ci ([2bf8f25](https://github.com/kdt310722/rpc/commit/2bf8f25))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.1.0
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.24...v0.1.0)
