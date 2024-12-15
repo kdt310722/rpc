@@ -1,4 +1,5 @@
-import { notNullish, notUndefined } from '@kdt310722/utils/common'
+import { isNull, notNullish, notUndefined } from '@kdt310722/utils/common'
+import { isNumber } from '@kdt310722/utils/number'
 import { isKeysOf, isObject } from '@kdt310722/utils/object'
 import { isString } from '@kdt310722/utils/string'
 import type { JsonRpcError } from '../errors'
@@ -8,8 +9,12 @@ export function isJsonRpcMessage(message: unknown): message is JsonRpcMessage {
     return isObject(message) && message.jsonrpc === '2.0'
 }
 
+export function isValidId(id: any): id is JsonRpcResponseId {
+    return isString(id) || isNumber(id) || isNull(id)
+}
+
 export function isJsonRpcRequestMessage(message: JsonRpcMessage): message is JsonRpcRequestMessage {
-    return isKeysOf(message, ['id', 'method'])
+    return isKeysOf(message, ['id', 'method']) && isValidId(message.id) && isString(message.method)
 }
 
 export function isJsonRpcNotifyMessage(message: JsonRpcMessage): message is JsonRpcNotifyMessage {
@@ -17,7 +22,7 @@ export function isJsonRpcNotifyMessage(message: JsonRpcMessage): message is Json
 }
 
 export function isJsonRpcResponseMessage(message: JsonRpcMessage): message is JsonRpcResponseMessage {
-    return isKeysOf(message, ['id'])
+    return isKeysOf(message, ['id']) && isValidId(message.id)
 }
 
 export function isJsonRpcError(message: unknown): message is JsonRpcErrorObject {
