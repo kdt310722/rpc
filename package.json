@@ -43,11 +43,11 @@
         "prepublishOnly": "pnpm build"
     },
     "dependencies": {
-        "@kdt310722/utils": "^0.0.11",
+        "@kdt310722/utils": "^0.0.12",
         "ws": "^8.18.0"
     },
     "devDependencies": {
-        "@commitlint/cli": "^19.6.0",
+        "@commitlint/cli": "^19.6.1",
         "@commitlint/config-conventional": "^19.6.0",
         "@kdt310722/eslint-config": "^0.1.8",
         "@kdt310722/tsconfig": "^1.0.0",
