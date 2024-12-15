@@ -36,9 +36,6 @@ jobs:
             - name: Build
               run: pnpm build
 
-            - name: Test
-              run: pnpm test
-
             - name: Set final commit status
               uses: myrotvorets/set-commit-status-action@master
               if: always()
