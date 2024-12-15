@@ -13,14 +13,25 @@ export interface Client {
     id: number
     socket: WebSocket
     request: IncomingMessage
+    metadata: Record<string, any>
     send: (message: WebSocketMessage) => Promise<void>
 }
+
+export interface BeforeUpgradeContext {
+    request: IncomingMessage
+    socket: Duplex
+    head: Buffer
+    metadata: Record<string, any>
+}
+
+export type BeforeUpgradeHandler = (context: BeforeUpgradeContext, upgrade: () => void) => void
 
 export interface WebSocketServerOptions {
     path?: string
     listener?: RequestListener
     heartbeat?: HeartbeatOptions | boolean
     sendTimeout?: number
+    beforeUpgrade?: BeforeUpgradeHandler
 }
 
 export type WebSocketServerEvents = {
@@ -35,19 +46,21 @@ export class WebSocketServer extends Emitter<WebSocketServerEvents> {
     protected readonly ws: BaseWebSocketServer
     protected readonly heartbeatOptions: Required<HeartbeatOptions>
     protected readonly sendTimeout: number
+    protected readonly beforeUpgrade?: BeforeUpgradeHandler
 
     protected clientId = 0
 
     public constructor(public readonly host: string, public readonly port: number, options: WebSocketServerOptions = {}) {
         super()
 
-        const { path = '/', listener, heartbeat = true, sendTimeout = 10 * 1000 } = options
+        const { path = '/', listener, heartbeat = true, sendTimeout = 10 * 1000, beforeUpgrade } = options
         const { enable: enableHeartbeat = true, interval = 30 * 1000, timeout = 10 * 1000 } = resolveNestedOptions(heartbeat) || {}
 
         this.ws = this.createWebSocketServer(path)
         this.http = this.createHttpServer(listener)
         this.heartbeatOptions = { enable: enableHeartbeat, interval, timeout }
         this.sendTimeout = sendTimeout
+        this.beforeUpgrade = beforeUpgrade
     }
 
     public async start() {
@@ -81,9 +94,9 @@ export class WebSocketServer extends Emitter<WebSocketServerEvents> {
         ))
     }
 
-    protected handleConnection(socket: WebSocket, request: IncomingMessage) {
+    protected handleConnection(metadata: Record<string, any>, socket: WebSocket, request: IncomingMessage) {
         const id = ++this.clientId
-        const client = { id, socket, request, send: (message: WebSocketMessage) => this.send(socket, message) }
+        const client = { id, socket, request, metadata, send: (message: WebSocketMessage) => this.send(socket, message) }
 
         const heartbeat = new Heartbeat(this.heartbeatOptions.timeout, this.heartbeatOptions.interval, () => socket.ping(), () => {
             socket.close()
@@ -106,7 +119,17 @@ export class WebSocketServer extends Emitter<WebSocketServerEvents> {
     }
 
     protected handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer) {
-        this.ws.handleUpgrade(request, socket, head, this.handleConnection.bind(this))
+        const metadata: Record<string, any> = {}
+
+        const upgrade = () => {
+            this.ws.handleUpgrade(request, socket, head, this.handleConnection.bind(this, metadata))
+        }
+
+        if (this.beforeUpgrade) {
+            this.beforeUpgrade({ request, socket, head, metadata }, upgrade)
+        } else {
+            upgrade()
+        }
     }
 
     protected createWebSocketServer(path: string) {
