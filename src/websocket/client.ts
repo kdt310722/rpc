@@ -1,18 +1,22 @@
 import { wrap } from '@kdt310722/utils/array'
+import { notNullish } from '@kdt310722/utils/common'
 import { Emitter } from '@kdt310722/utils/event'
-import { tap } from '@kdt310722/utils/function'
 import { resolveNestedOptions } from '@kdt310722/utils/object'
-import { createDeferred, sleep, withTimeout } from '@kdt310722/utils/promise'
-import { WebSocket } from 'isows'
+import { createDeferred, withTimeout } from '@kdt310722/utils/promise'
+import { withRetry } from '@kdt310722/utils/src/promise'
+import { WebSocket } from 'ws'
 import { WebsocketClientError } from '../errors'
-import type { CloseEvent, UrlLike, WebSocketMessage } from '../types'
+import type { UrlLike, WebSocketMessage } from '../types'
+import { Heartbeat } from '../utils'
 
-export interface AutoReconnectOptions {
+export interface ReconnectOptions {
+    enable?: boolean
     delay?: number
     attempts?: number
 }
 
 export interface HeartbeatOptions {
+    enable?: boolean
     interval?: number
     timeout?: number
 }
@@ -20,21 +24,18 @@ export interface HeartbeatOptions {
 export interface WebSocketClientOptions {
     protocols?: string | string[]
     connectTimeout?: number
-    autoConnect?: boolean
-    autoReconnect?: AutoReconnectOptions | boolean
+    disconnectTimeout?: number
+    sendTimeout?: number
+    reconnect?: ReconnectOptions | boolean
     heartbeat?: HeartbeatOptions | boolean
-    heartbeatMessage?: WebSocketMessage
 }
 
 export type WebSocketClientEvents = {
+    'connected': () => void
+    'disconnected': (code: number, reason: Buffer, isExplicitlyClosed: boolean) => void
+    'reconnect': () => void
     'error': (error: WebsocketClientError) => void
-    'close': (code: number, reason: string) => void
-    'open': () => void
-    'message': (data: WebSocketMessage) => void
-    'reconnect': (attempt: number) => void
-    'reconnected': () => void
-    'reconnect-failed': () => void
-    'disconnected': (code: number, reason: string) => void
+    'message': (message: WebSocketMessage) => void
 }
 
 export class WebSocketClient extends Emitter<WebSocketClientEvents> {
@@ -42,152 +43,143 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
     public readonly protocols: string[]
 
     protected readonly connectTimeout: number
-    protected readonly autoReconnect: Required<AutoReconnectOptions>
-    protected readonly heartbeat: Required<HeartbeatOptions> & { enabled: boolean }
-    protected readonly heartbeatMessage: WebSocketMessage
+    protected readonly disconnectTimeout: number
+    protected readonly sendTimeout: number
 
-    protected websocket?: Promise<WebSocket>
+    protected readonly reconnectOptions: Required<ReconnectOptions>
+    protected readonly heartbeat?: Heartbeat
+
+    protected socket?: WebSocket
     protected explicitlyClosed = false
-    protected retried = 0
-    protected pingInterval?: ReturnType<typeof setInterval>
-    protected pongTimeout?: ReturnType<typeof setTimeout>
 
-    public constructor(url: UrlLike, options: WebSocketClientOptions = {}) {
+    public constructor(url: UrlLike, { protocols = [], connectTimeout = 10 * 1000, disconnectTimeout = 10 * 1000, sendTimeout = 10 * 1000, reconnect = true, heartbeat = true }: WebSocketClientOptions = {}) {
         super()
 
-        const { protocols = [], connectTimeout = 5000, autoConnect = true, autoReconnect = true, heartbeatMessage = 'ping' } = options
-        const { delay = 0, attempts = 3 } = resolveNestedOptions(autoReconnect) || { delay: 0, attempts: 0 }
-        const heartbeat = resolveNestedOptions(options.heartbeat ?? true)
-
-        this.url = url instanceof URL ? url.href : url.toString()
+        this.url = new URL(url).href
         this.protocols = wrap(protocols)
-        this.connectTimeout = connectTimeout
-        this.autoReconnect = { delay, attempts }
-        this.heartbeat = heartbeat ? { enabled: true, interval: 30_000, timeout: 10_000, ...heartbeat } : { enabled: false, interval: 0, timeout: 0 }
-        this.heartbeatMessage = heartbeatMessage
 
-        if (autoConnect) {
-            this.connect().catch((error: unknown) => {
-                this.onError(error)
-            })
-        }
+        const { enable: enableReconnect = true, attempts: reconnectAttempts = 3, delay: reconnectDelay = 1000 } = resolveNestedOptions(reconnect) || {}
+        const { enable: enableHeartbeat = true, interval: heartbeatInterval = 30 * 1000, timeout: heartbeatTimeout = 10 * 1000 } = resolveNestedOptions(heartbeat) || {}
+
+        this.connectTimeout = connectTimeout
+        this.disconnectTimeout = disconnectTimeout
+        this.sendTimeout = sendTimeout
+        this.reconnectOptions = { enable: enableReconnect, attempts: reconnectAttempts, delay: reconnectDelay }
+        this.heartbeat = enableHeartbeat ? new Heartbeat(heartbeatTimeout, heartbeatInterval, () => this.socket?.ping(), () => this.disconnect(undefined, undefined, false)) : undefined
+    }
+
+    public get isConnected() {
+        return this.socket?.readyState === WebSocket.OPEN
     }
 
     public async connect() {
-        if (this.websocket) {
-            return this.websocket.then(() => void 0)
+        this.explicitlyClosed = false
+
+        if (this.socket) {
+            return
         }
 
-        this.explicitlyClosed = false
-        this.retried = 0
-        this.websocket = this.createConnection()
+        await this.createConnection()
     }
 
-    public disconnect(code?: number, reason?: string, isExplicitlyClosed = true) {
+    public async disconnect(code?: number, reason?: string, isExplicitlyClosed = true) {
+        if (!this.socket) {
+            return
+        }
+
         if (isExplicitlyClosed) {
             this.explicitlyClosed = true
         }
 
-        this.websocket?.then((ws) => {
-            ws.close(code, reason)
+        const socket = this.socket
+        const disconnected = createDeferred<void>()
+
+        socket.once('close', () => {
+            disconnected.resolve()
+        })
+
+        socket.close(code, reason)
+
+        await withTimeout(disconnected, this.disconnectTimeout).catch(() => {
+            this.terminate()
         })
     }
 
-    public send(data: WebSocketMessage) {
-        this.connect().then(() => this.websocket).then((ws) => ws?.send(data)).catch((error: unknown) => {
-            this.onError(error)
+    public terminate() {
+        this.socket?.terminate()
+    }
+
+    public async send(message: WebSocketMessage) {
+        if (!this.socket || !this.isConnected) {
+            throw new WebsocketClientError(this, 'WebSocket is not connected')
+        }
+
+        const sent = createDeferred<void>()
+
+        this.socket.send(message, (error) => {
+            return notNullish(error) ? sent.reject(Object.assign(new WebsocketClientError(this, 'Failed to send message to WebSocket server', { cause: error }), { message })) : sent.resolve()
         })
-    }
 
-    protected resetHeartbeat() {
-        clearInterval(this.pingInterval)
-        clearTimeout(this.pongTimeout)
-    }
-
-    protected onMessage({ data }: MessageEvent) {
-        clearTimeout(this.pongTimeout)
-        this.emit('message', data)
-    }
-
-    protected onOpen() {
-        this.emit('open')
-
-        if (this.heartbeat.enabled) {
-            this.pingInterval = setInterval(() => this.runHeartbeat(), this.heartbeat.interval)
-        }
-    }
-
-    protected runHeartbeat() {
-        this.pongTimeout = setTimeout(() => this.disconnect(undefined, undefined, false), this.heartbeat.timeout)
-        this.send(this.heartbeatMessage)
-    }
-
-    protected onClose({ code, reason }: CloseEvent) {
-        this.emit('close', code, reason)
-
-        if (this.explicitlyClosed) {
-            this.emit('disconnected', code, reason)
-        } else {
-            this.retried++
-
-            if (this.retried < this.autoReconnect.attempts) {
-                this.emit('reconnect', this.retried)
-
-                sleep(this.autoReconnect.delay).then(() => this.createConnection()).then(() => tap(this.emit('reconnected'), () => (this.retried = 0))).catch((error: unknown) => {
-                    this.onError(error)
-                })
-            } else if (this.autoReconnect.attempts > 0) {
-                this.emit('reconnect-failed')
-            }
-        }
-    }
-
-    protected onError(error: unknown) {
-        const _error = error instanceof WebsocketClientError ? error : new WebsocketClientError(this, 'An error occurred', { cause: error })
-
-        if (this.listenerCount('error') === 0) {
-            throw _error
-        }
-
-        this.emit('error', _error)
+        await withTimeout(sent, this.sendTimeout, () => (
+            Object.assign(new WebsocketClientError(this, 'Send timeout'), { message })
+        ))
     }
 
     protected async createConnection() {
-        const isConnected = createDeferred<void>()
-        const client = new WebSocket(this.url, this.protocols)
+        const socket = this.socket = new WebSocket(this.url, this.protocols)
+        const connected = createDeferred<void>()
 
-        client.addEventListener('message', this.onMessage.bind(this))
+        socket.on('pong', () => {
+            this.heartbeat?.resolve()
+        })
 
-        client.addEventListener('error', (event) => {
-            const error = Object.assign(new WebsocketClientError(this), { event })
+        socket.on('ping', () => {
+            this.heartbeat?.resolve()
+            socket.pong()
+        })
 
-            if (!isConnected.isSettled) {
-                return isConnected.reject(error)
+        socket.on('message', (message) => {
+            this.heartbeat?.resolve()
+            this.emit('message', message)
+        })
+
+        socket.on('open', () => {
+            this.emit('connected')
+            this.heartbeat?.start()
+
+            connected.resolve()
+        })
+
+        socket.on('close', (code, reason) => {
+            this.socket = undefined
+            this.heartbeat?.stop()
+
+            if (!connected.isSettled) {
+                return connected.reject(new WebsocketClientError(this, 'Connection closed before it was established'))
             }
 
-            this.onError(error)
+            this.emit('disconnected', code, reason, this.explicitlyClosed)
+
+            if (!this.explicitlyClosed && this.reconnectOptions.enable) {
+                this.emit('reconnect')
+
+                withRetry(this.connect.bind(this), this.reconnectOptions.attempts, this.reconnectOptions.delay).catch((error) => {
+                    this.emit('error', new WebsocketClientError(this, 'Reconnect failed', { cause: error }))
+                })
+            }
         })
 
-        client.addEventListener('close', (event) => {
-            this.resetHeartbeat()
-
-            if (!isConnected.isSettled) {
-                return isConnected.reject(new WebsocketClientError(this, 'Connection closed before it was established'))
+        socket.on('error', (error) => {
+            if (!connected.isSettled) {
+                return connected.reject(new WebsocketClientError(this, 'Connect error', { cause: error }))
             }
 
-            this.onClose(event)
+            this.emit('error', new WebsocketClientError(this, 'Socket error', { cause: error }))
         })
 
-        client.addEventListener('open', () => {
-            isConnected.resolve()
-            this.onOpen()
+        await withTimeout(connected, this.connectTimeout, () => new WebsocketClientError(this, 'Connect timeout')).catch((error) => {
+            this.socket = undefined
+            throw error
         })
-
-        await withTimeout(isConnected, this.connectTimeout, new WebsocketClientError(this, 'Connect timeout')).catch((error: unknown) => {
-            client.close()
-            this.onError(error)
-        })
-
-        return client
     }
 }

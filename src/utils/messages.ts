@@ -1,15 +1,15 @@
-import { isUndefined, notUndefined } from '@kdt310722/utils/common'
+import { notNullish, notUndefined } from '@kdt310722/utils/common'
 import { isKeysOf, isObject } from '@kdt310722/utils/object'
 import { isString } from '@kdt310722/utils/string'
 import type { JsonRpcError } from '../errors'
-import type { JsonRpcErrorObject, JsonRpcErrorResponseMessage, JsonRpcMessage, JsonRpcNotifyMessage, JsonRpcRequestMessage, JsonRpcResponseMessage } from '../types'
-
-export function isJsonRpcRequestMessage(message: JsonRpcMessage): message is JsonRpcRequestMessage {
-    return isKeysOf(message, ['id', 'method'])
-}
+import type { JsonRpcErrorObject, JsonRpcErrorResponseMessage, JsonRpcMessage, JsonRpcNotifyMessage, JsonRpcRequestMessage, JsonRpcResponseId, JsonRpcResponseMessage, JsonRpcResponseMessageWithNonNullId, JsonRpcSuccessResponseMessage } from '../types'
 
 export function isJsonRpcMessage(message: unknown): message is JsonRpcMessage {
     return isObject(message) && message.jsonrpc === '2.0'
+}
+
+export function isJsonRpcRequestMessage(message: JsonRpcMessage): message is JsonRpcRequestMessage {
+    return isKeysOf(message, ['id', 'method'])
 }
 
 export function isJsonRpcNotifyMessage(message: JsonRpcMessage): message is JsonRpcNotifyMessage {
@@ -28,22 +28,22 @@ export function isJsonRpcErrorResponseMessage(message: JsonRpcMessage): message 
     return isKeysOf(message, ['error']) && isJsonRpcError(message.error)
 }
 
-export function createNotifyMessage(method: string, params?: any) {
-    return { jsonrpc: '2.0', method, ...(isUndefined(params) ? {} : { params }) }
+export function isJsonRpcResponseHasNonNullableId(response: JsonRpcResponseMessage): response is JsonRpcResponseMessageWithNonNullId {
+    return notNullish(response.id)
 }
 
-export function createRequestMessage(id: string | number, method: string, params?: any) {
-    return { jsonrpc: '2.0', id, method, ...(isUndefined(params) ? {} : { params }) }
+export function createNotifyMessage(method: string, params?: any): JsonRpcNotifyMessage {
+    return { jsonrpc: '2.0', method, ...(notUndefined(params) ? { params } : {}) }
 }
 
-export function createEventMessage(event: string, data: any) {
-    return createNotifyMessage('subscribe', { event, result: data })
+export function createRequestMessage(id: string | number, method: string, params?: any): JsonRpcRequestMessage {
+    return { jsonrpc: '2.0', id, method, ...(notUndefined(params) ? { params } : {}) }
 }
 
-export function createResponseMessage(id: number | string | null, result?: any, error?: JsonRpcError) {
-    return { jsonrpc: '2.0', id, ...(notUndefined(result) ? { result } : {}), ...(notUndefined(error) ? { error: { code: error.code, message: error.message, data: error.data } } : {}) }
+export function createSuccessResponseMessage<R = any>(id: JsonRpcResponseId, result: R): JsonRpcSuccessResponseMessage<R> {
+    return { jsonrpc: '2.0', id, result }
 }
 
-export function createErrorResponse(id: number | string | null, error: JsonRpcError) {
-    return createResponseMessage(id, undefined, error)
+export function createErrorResponseMessage(id: JsonRpcResponseId, error: JsonRpcError): JsonRpcErrorResponseMessage {
+    return { jsonrpc: '2.0', id, error: error.toJSON() }
 }

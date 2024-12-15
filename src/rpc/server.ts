@@ -1,284 +1,177 @@
 import { isArray } from '@kdt310722/utils/array'
 import { join } from '@kdt310722/utils/buffer'
+import { isNull, notUndefined } from '@kdt310722/utils/common'
 import { Emitter } from '@kdt310722/utils/event'
-import { isFunction, tap } from '@kdt310722/utils/function'
-import { type AnyObject, isObject, resolveNestedOptions } from '@kdt310722/utils/object'
-import type { Awaitable } from '@kdt310722/utils/promise'
-import { isString } from '@kdt310722/utils/string'
-import { WebSocket } from 'isows'
+import { tap, tryCatch } from '@kdt310722/utils/function'
+import { parseJson, stringifyJson } from '@kdt310722/utils/json'
+import type { AnyObject } from '@kdt310722/utils/object'
+import { type Awaitable, withTimeout } from '@kdt310722/utils/promise'
+import type { RawData, WebSocket } from 'ws'
 import { JsonRpcError } from '../errors'
-import type { DataDecoder, DataEncoder, WebSocketMessage } from '../types'
-import { createErrorResponse, createEventMessage, createRequestMessage, createResponseMessage, isJsonRpcMessage, isJsonRpcRequestMessage } from '../utils'
+import type { JsonRpcMessage, WebSocketMessage } from '../types'
+import { createErrorResponseMessage, createNotifyMessage, createSuccessResponseMessage, isJsonRpcMessage, isJsonRpcNotifyMessage, isJsonRpcRequestMessage } from '../utils'
+import { type Client, WebSocketServer, type WebSocketServerOptions } from '../websocket'
 
-export interface WebsocketClientContext {
-    id: number
-    socket: WebSocket
-    isAlive: boolean
-    heartbeatTimer?: ReturnType<typeof setInterval>
-    pongTimeout?: ReturnType<typeof setTimeout>
-
-    [key: string]: any
+export type RpcClientEvents = {
+    notification: (method: string, params?: any) => void
 }
 
-export interface RpcServerHeartbeatOptions {
-    interval?: number
-    timeout?: number
+export interface RpcClient extends Omit<Client, 'send'> {
+    events: Emitter<RpcClientEvents>
+    notify: (method: string, params?: any) => Promise<void>
+    send: (data: any[] | AnyObject) => Promise<void>
+    sendRaw: (data: WebSocketMessage) => Promise<void>
 }
 
-export interface RpcServerOptions {
-    heartbeat?: RpcServerHeartbeatOptions | boolean
-    heartbeatMessage?: WebSocketMessage
-    exceptionHandler?: (error: Error) => JsonRpcError
-    dataEncoder?: DataEncoder
-    dataDecoder?: DataDecoder
-    batchSize?: number
-    onClientError?: (error: Error) => void
-    onUnhandledError?: (error: Error) => void
-}
+export type RpcWebSocketMethodHandler = (params: any, client: RpcClient) => Awaitable<any>
 
-const UNIQUE_ID = Symbol('UNIQUE_ID')
-const SKIP_SEND = Symbol('SKIP_SEND')
+export interface RpcWebSocketServerOptions extends WebSocketServerOptions {
+    maxBatchSize?: number
+    operationTimeout?: number
+    methods?: Record<string, RpcWebSocketMethodHandler>
+}
 
 export type RpcWebSocketServerEvents = {
-    connected: (context: WebsocketClientContext) => void
-    disconnected: (id: number) => void
-    subscribe: (event: string, params: any, context: WebsocketClientContext) => boolean
-    unsubscribe: (event: string, context: WebsocketClientContext) => boolean
+    error: (error: unknown) => void
+    connection: (client: RpcClient) => void
+    notification: (client: RpcClient, method: string, params?: any) => void
+    unhandledMessage: (client: RpcClient, message: WebSocketMessage) => void
 }
 
-export class RpcWebSocketServer {
-    public readonly emitter: Emitter<RpcWebSocketServerEvents>
+export class RpcWebSocketServer extends Emitter<RpcWebSocketServerEvents> {
+    public readonly server: WebSocketServer
 
-    protected readonly heartbeat: Required<RpcServerHeartbeatOptions> & { enabled: boolean }
-    protected readonly heartbeatMessage: WebSocketMessage
-    protected readonly exceptionHandler?: (error: Error) => JsonRpcError
-    protected readonly onUnhandledError?: (error: Error) => void
-    protected readonly clients = new Map<number, WebsocketClientContext>()
-    protected readonly batchSize: number
+    protected readonly maxBatchSize: number
+    protected readonly operationTimeout: number
+    protected readonly methods: Record<string, RpcWebSocketMethodHandler>
 
-    protected readonly dataEncoder: DataEncoder
-    protected readonly dataDecoder: DataDecoder
+    public constructor(host: string, port: number, { maxBatchSize = 100, operationTimeout = 60 * 1000, methods = {}, ...options }: RpcWebSocketServerOptions = {}) {
+        super()
 
-    protected readonly methods = new Map<string, (params: any[], context: WebsocketClientContext) => Promise<any>>()
-    protected readonly rpcEvents = new Map<string, Set<number>>()
-    protected readonly rpcDynamicEvents: Array<(name: string, context: WebsocketClientContext) => boolean> = []
-
-    protected incrementId = 0
-
-    public constructor(protected readonly options: RpcServerOptions = {}) {
-        const { exceptionHandler, onUnhandledError, dataEncoder, dataDecoder, batchSize = 100 } = options
-        const heartbeat = resolveNestedOptions(options.heartbeat ?? true)
-
-        this.emitter = new Emitter()
-        this.exceptionHandler = exceptionHandler
-        this.onUnhandledError = onUnhandledError
-        this.dataEncoder = dataEncoder ?? JSON.stringify
-        this.dataDecoder = dataDecoder ?? ((data) => JSON.parse(join(data)))
-        this.batchSize = batchSize
-        this.heartbeat = heartbeat ? { enabled: true, interval: 30_000, timeout: 10_000, ...heartbeat } : { enabled: false, interval: 0, timeout: 0 }
-        this.heartbeatMessage = options.heartbeatMessage ?? this.dataEncoder(createRequestMessage('ping', 'ping'))
-
-        this.registerBuiltInMethods()
+        this.server = this.createServer(host, port, options)
+        this.maxBatchSize = maxBatchSize
+        this.operationTimeout = operationTimeout
+        this.methods = methods
     }
 
-    public addMethod(name: string, handler: (params: any[], context: WebsocketClientContext, server: RpcWebSocketServer) => Awaitable<any>) {
-        this.methods.set(name, (params, context) => handler(params, context, this))
-    }
-
-    public addEvent(name: string | ((name: string, context: WebsocketClientContext) => boolean)) {
-        if (isFunction(name)) {
-            this.rpcDynamicEvents.push(name)
-
-            return
+    public addMethod(name: string, handler: RpcWebSocketMethodHandler, override = false) {
+        if (this.methods[name] && !override) {
+            throw new Error(`Method ${name} already exists`)
         }
 
-        if (!this.rpcEvents.has(name)) {
-            this.rpcEvents.set(name, new Set())
-        }
+        this.methods[name] = handler
     }
 
-    public subscriptionsCount(name: string) {
-        return this.rpcEvents.get(name)?.size ?? 0
+    public async notify(socket: WebSocket, method: string, params?: any, clientId?: number) {
+        return this.server.send(socket, stringifyJson(createNotifyMessage(method, params)), clientId)
     }
 
-    public emit(name: string, data: any) {
-        const message = this.dataEncoder(createEventMessage(name, data))
-
-        for (const id of this.rpcEvents.get(name) ?? []) {
-            this.clients.get(id)?.socket.send(message)
-        }
+    public async send(socket: WebSocket, data: any[] | AnyObject, clientId?: number) {
+        return this.server.send(socket, stringifyJson(data), clientId)
     }
 
-    public send(socket: WebSocket, data: any) {
-        socket.send(this.dataEncoder(data))
-    }
-
-    public handleConnection(socket: WebSocket, customContext: AnyObject = {}) {
-        const id = socket[UNIQUE_ID] = ++this.incrementId
-        let heartbeatTimer: ReturnType<typeof setInterval> | undefined
-
-        if (this.heartbeat.enabled) {
-            heartbeatTimer = setInterval(() => this.runHeartbeat(socket, id), this.heartbeat.interval)
-        }
-
-        this.clients.set(id, { id, socket, isAlive: true, heartbeatTimer, ...customContext })
-
-        const context = tap(this.clients.get(id)!, (ctx) => {
-            this.emitter.emit('connected', ctx)
-        })
-
-        socket.addEventListener('error', (event) => {
-            this.options.onClientError?.(Object.assign(new Error('Websocket error'), { event }))
-        })
-
-        socket.addEventListener('close', () => {
-            const context = this.clients.get(id)
-
-            if (context) {
-                clearInterval(context.heartbeatTimer)
-                clearTimeout(context.pongTimeout)
-            }
-
-            for (const [event, clients] of this.rpcEvents) {
-                clients.delete(id)
-
-                if (context) {
-                    this.emitter.emit('unsubscribe', event, context)
-                }
-            }
-
-            this.clients.delete(id)
-            this.emitter.emit('disconnected', id)
-        })
-
-        socket.addEventListener('message', ({ data }) => {
-            this.stillAlive(id)
-
-            if (socket.readyState !== WebSocket.OPEN) {
-                return
-            }
-
-            if (isString(data) && data === 'ping') {
-                return socket.send('pong')
-            }
-
-            let rpcMessage: any
-
-            try {
-                rpcMessage = this.dataDecoder(data)
-            } catch {
-                return this.send(socket, createErrorResponse(null, new JsonRpcError(-32_700, 'Invalid JSON')))
-            }
-
-            if (!isArray(rpcMessage) && !isObject(rpcMessage)) {
-                return this.send(socket, createErrorResponse(null, new JsonRpcError(-32_600, 'Invalid request')))
-            }
-
-            this.onMessage(context, rpcMessage).catch((error: unknown) => {
-                throw new Error('Error while processing message', { cause: error })
-            })
-        })
-    }
-
-    protected runHeartbeat(socket: WebSocket, id: number) {
-        const context = this.clients.get(id)!
-
-        context.pongTimeout = setTimeout(() => !context.isAlive && socket.close(), this.heartbeat.timeout)
-        context.isAlive = false
-
-        socket.send(this.heartbeatMessage)
-    }
-
-    protected stillAlive(id: number) {
-        const context = this.clients.get(id)
-
-        if (context) {
-            context.isAlive = true
-            clearTimeout(context.pongTimeout)
-        }
-    }
-
-    protected registerBuiltInMethods() {
-        this.addMethod('ping', () => 'pong')
-
-        this.addMethod('subscribe', (params, context) => {
-            if (params.length !== 1 || !isString(params[0])) {
-                throw new JsonRpcError(-32_602, 'Invalid params')
-            }
-
-            if (!this.rpcEvents.has(params[0])) {
-                if (this.rpcDynamicEvents.some((handler) => handler(params[0], context))) {
-                    this.rpcEvents.set(params[0], new Set())
-                } else {
-                    throw new JsonRpcError(-32_602, 'Event not found')
-                }
-            }
-
-            this.rpcEvents.get(params[0])?.add(context.id)
-            this.emitter.emit('subscribe', params[0], params[1], context)
-
-            return true
-        })
-
-        this.addMethod('unsubscribe', (params, context) => {
-            if (params.length !== 1 || !isString(params[0])) {
-                throw new JsonRpcError(-32_602, 'Invalid params')
-            }
-
-            this.rpcEvents.get(params[0])?.delete(context.id)
-            this.emitter.emit('unsubscribe', params[0], context)
-
-            return true
-        })
-    }
-
-    protected async handleRpcMessage(context: WebsocketClientContext, message: AnyObject) {
-        if (!isJsonRpcMessage(message)) {
-            return createErrorResponse(null, new JsonRpcError(-32_600, 'Invalid request'))
+    protected async getRpcResponse(client: RpcClient, message: JsonRpcMessage) {
+        if (isJsonRpcNotifyMessage(message)) {
+            return tap(void 0, () => client.events.emit('notification', message.method, message.params))
         }
 
         if (!isJsonRpcRequestMessage(message)) {
-            return SKIP_SEND
+            return createErrorResponseMessage(message.id ?? null, new JsonRpcError(-32_600, 'Invalid Request'))
         }
 
-        const method = this.methods.get(message.method)
+        const handler = this.methods[message.method]
 
-        if (method) {
-            try {
-                return createResponseMessage(message.id, await method(message.params ?? [], context))
-            } catch (error) {
-                const err = error instanceof Error ? error : new Error('Unexpected error', { cause: error })
-
-                if (err instanceof JsonRpcError) {
-                    return createResponseMessage(message.id, undefined, err)
-                }
-
-                if (this.exceptionHandler) {
-                    return createResponseMessage(message.id, undefined, this.exceptionHandler(err))
-                }
-
-                return tap(createResponseMessage(message.id, undefined, new JsonRpcError(-32_600, 'Internal error')), () => {
-                    this.onUnhandledError?.(err)
-                })
-            }
+        if (!handler) {
+            return createErrorResponseMessage(message.id, new JsonRpcError(-32_601, 'Method not found'))
         }
 
-        return createErrorResponse(message.id, new JsonRpcError(-32_601, 'Method not found'))
+        const response = withTimeout(Promise.resolve().then(() => handler(message.params, client)), this.operationTimeout, () => {
+            return new JsonRpcError(-32_000, 'Operation Timeout')
+        })
+
+        return response.then((r) => createSuccessResponseMessage(message.id, r)).catch((error) => {
+            return createErrorResponseMessage(message.id, error instanceof JsonRpcError ? error : new JsonRpcError(-32_603, 'Internal Error'))
+        })
     }
 
-    protected async onMessage(context: WebsocketClientContext, data: AnyObject | any[]) {
-        if (isArray(data)) {
-            if (data.length > this.batchSize) {
-                return this.send(context.socket, createErrorResponse(null, new JsonRpcError(-32_603, 'Batch size exceeded')))
+    protected handleRpcMessage(client: RpcClient, message: JsonRpcMessage) {
+        this.getRpcResponse(client, message).then((response) => {
+            if (notUndefined(response)) {
+                client.send(response).catch((error) => this.emit('error', error))
+            }
+        })
+    }
+
+    protected handleRpcBatchMessage(client: RpcClient, messages: any[]) {
+        if (messages.length > this.maxBatchSize) {
+            return client.send(createErrorResponseMessage(null, new JsonRpcError(-32_600, 'Batch size exceeded')))
+        }
+
+        const responses = messages.map((message) => {
+            if (!isJsonRpcMessage(message)) {
+                return createErrorResponseMessage(null, new JsonRpcError(-32_600, 'Invalid Request'))
             }
 
-            return this.send(context.socket, await Promise.all(data.map((item) => this.handleRpcMessage(context, item).then((i) => i ?? null))))
+            return this.getRpcResponse(client, message)
+        })
+
+        const result = Promise.all(responses).catch((error) => {
+            return tap(createErrorResponseMessage(null, new JsonRpcError(-32_603, 'Internal Error')), () => this.emit('error', error))
+        })
+
+        result.then((r) => {
+            client.send(isArray(r) ? r.filter(notUndefined) : r).catch((error) => this.emit('error', error))
+        })
+
+        return true
+    }
+
+    protected handleWebSocketMessage(client: RpcClient, message: RawData) {
+        const data = tryCatch(() => parseJson(join(message)), null)
+
+        if (isJsonRpcMessage(data)) {
+            return this.handleRpcMessage(client, data)
         }
 
-        const response = await this.handleRpcMessage(context, data)
-
-        if (response !== SKIP_SEND) {
-            return this.send(context.socket, response)
+        if (isArray(data)) {
+            return this.handleRpcBatchMessage(client, data)
         }
+
+        const response = createErrorResponseMessage(null, isNull(data) ? new JsonRpcError(-32_700, 'Invalid JSON') : new JsonRpcError(-32_600, 'Invalid Request'))
+
+        client.send(response).catch((error) => {
+            this.emit('error', error)
+        })
+
+        return this.emit('unhandledMessage', client, data)
+    }
+
+    protected handleConnection(client: Client) {
+        const notify = (method: string, params?: any) => this.notify(client.socket, method, params, client.id)
+        const sendRaw = (data: WebSocketMessage) => client.send(data)
+        const send = (data: any[] | AnyObject) => this.send(client.socket, data, client.id)
+
+        const events = new Emitter<RpcClientEvents>()
+        const rpcClient: RpcClient = { ...client, events, notify, send, sendRaw }
+
+        events.on('notification', (method, params) => {
+            this.emit('notification', rpcClient, method, params)
+        })
+
+        client.socket.on('message', (message) => {
+            this.handleWebSocketMessage(rpcClient, message)
+        })
+
+        this.emit('connection', rpcClient)
+    }
+
+    protected createServer(host: string, port: number, options?: WebSocketServerOptions) {
+        const server = new WebSocketServer(host, port, options)
+
+        server.on('connection', (client) => {
+            this.handleConnection(client)
+        })
+
+        return server
     }
 }

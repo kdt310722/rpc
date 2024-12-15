@@ -1,27 +1,23 @@
-import type { AnyObject } from '@kdt310722/utils/object'
-import type { JsonRpcResponseMessage } from '../types'
-
-export interface JsonRpcRequestErrorOptions extends ErrorOptions {
-    code?: number
-    url?: string
-    payload?: AnyObject
-    response?: JsonRpcResponseMessage
-}
+import { notUndefined } from '@kdt310722/utils/common'
+import type { JsonRpcRequestMessage, JsonRpcResponseMessage } from '../types'
 
 export class JsonRpcRequestError extends Error {
-    public declare code?: string | number
-    public declare url?: string
-    public declare payload?: AnyObject
-    public declare response?: JsonRpcResponseMessage
+    public declare readonly payload?: JsonRpcRequestMessage
+    public declare readonly response?: JsonRpcResponseMessage
 
-    public constructor(message?: string, options: JsonRpcRequestErrorOptions = {}) {
-        super(message, options)
+    public withPayload(payload?: JsonRpcRequestMessage): this {
+        if (notUndefined(payload)) {
+            Object.defineProperty(this, 'payload', { value: payload, writable: false, enumerable: true })
+        }
 
-        Object.defineProperties(this, {
-            code: { value: options.code, enumerable: true },
-            url: { value: options.url, enumerable: true },
-            payload: { value: options.payload, enumerable: true },
-            response: { value: options.response, enumerable: true },
-        })
+        return this
+    }
+
+    public withResponse(response?: JsonRpcResponseMessage): this {
+        if (notUndefined(response)) {
+            Object.defineProperty(this, 'response', { value: response, writable: false, enumerable: true })
+        }
+
+        return this
     }
 }
