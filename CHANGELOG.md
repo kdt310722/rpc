@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.1.0
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.0.24...v0.1.0)
+
+### 💅 Refactors
+
+- ⚠️  New version ([fef4cb4](https://github.com/kdt310722/rpc/commit/fef4cb4))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️  New version ([fef4cb4](https://github.com/kdt310722/rpc/commit/fef4cb4))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.0.24
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.0.23...v0.0.24)
