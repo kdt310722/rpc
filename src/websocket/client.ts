@@ -143,10 +143,10 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
         })
 
         socket.on('open', () => {
-            this.emit('connected')
-            this.heartbeat?.start()
-
             connected.resolve()
+
+            this.heartbeat?.start()
+            this.emit('connected')
         })
 
         socket.on('close', (code, reason) => {
