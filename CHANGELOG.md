@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.1.2
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.1.1...v0.1.2)
+
+### 🚀 Enhancements
+
+- BeforeUpgrade hook ([6a9f190](https://github.com/kdt310722/rpc/commit/6a9f190))
+- Check valid id and method ([4b84f7d](https://github.com/kdt310722/rpc/commit/4b84f7d))
+
+### 🩹 Fixes
+
+- Only send heartbeat message if already connected ([83bfd82](https://github.com/kdt310722/rpc/commit/83bfd82))
+
+### 🏡 Chore
+
+- Update deps ([aca2c2a](https://github.com/kdt310722/rpc/commit/aca2c2a))
+- Update deps ([3c9e567](https://github.com/kdt310722/rpc/commit/3c9e567))
+- Update deps ([39a0538](https://github.com/kdt310722/rpc/commit/39a0538))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.1.1
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.1.0...v0.1.1)
