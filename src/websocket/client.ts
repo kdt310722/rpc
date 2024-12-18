@@ -64,7 +64,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
         this.disconnectTimeout = disconnectTimeout
         this.sendTimeout = sendTimeout
         this.reconnectOptions = { enable: enableReconnect, attempts: reconnectAttempts, delay: reconnectDelay }
-        this.heartbeat = enableHeartbeat ? new Heartbeat(heartbeatTimeout, heartbeatInterval, () => this.socket?.ping(), () => this.disconnect(undefined, undefined, false)) : undefined
+        this.heartbeat = enableHeartbeat ? new Heartbeat(heartbeatTimeout, heartbeatInterval, () => this.isConnected && this.socket?.ping(), () => this.disconnect(undefined, undefined, false)) : undefined
     }
 
     public get isConnected() {
