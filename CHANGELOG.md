@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.1.5
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.1.4...v0.1.5)
+
+### 🩹 Fixes
+
+- Emit error ([148fb4a](https://github.com/kdt310722/rpc/commit/148fb4a))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.1.4
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.1.3...v0.1.4)
