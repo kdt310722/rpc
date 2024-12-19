@@ -51,7 +51,7 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
         const { payload, result } = this.createRequest(this.createRequestPayload<R>(method, params, id))
 
         await this.socket.send(stringifyJson(payload)).catch((error) => {
-            throw new JsonRpcRequestError('Send request failed', { cause: error }).withPayload(payload)
+            throw new JsonRpcRequestError('Send request failed', { cause: error }).withUrl(this.socket.url).withPayload(payload)
         })
 
         return result
@@ -79,7 +79,7 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
         this.requests.set(id, { payload, response })
 
         const result = withTimeout(response, this.requestTimeout, () => {
-            return new JsonRpcRequestError('Request timeout').withPayload(payload)
+            return new JsonRpcRequestError('Request timeout').withUrl(this.socket.url).withPayload(payload)
         })
 
         return { payload, result }
@@ -87,7 +87,7 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
 
     protected handleRpcResponse(request: PendingRequest, response: JsonRpcResponseMessageWithNonNullId) {
         if (isJsonRpcErrorResponseMessage(response)) {
-            return request.response.reject(new JsonRpcRequestError('Request failed', { cause: toJsonRpcError(response.error) }).withPayload(request.payload))
+            return request.response.reject(new JsonRpcRequestError('Request failed', { cause: toJsonRpcError(response.error) }).withUrl(this.socket.url).withPayload(request.payload))
         }
 
         return request.response.resolve(response.result)
