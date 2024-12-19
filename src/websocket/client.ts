@@ -1,8 +1,8 @@
 import { wrap } from '@kdt310722/utils/array'
-import { notNullish } from '@kdt310722/utils/common'
+import { isBoolean, notNullish } from '@kdt310722/utils/common'
 import { Emitter } from '@kdt310722/utils/event'
 import { resolveNestedOptions } from '@kdt310722/utils/object'
-import { createDeferred, withRetry, withTimeout } from '@kdt310722/utils/promise'
+import { createDeferred, sleep, withTimeout } from '@kdt310722/utils/promise'
 import { WebSocket } from 'ws'
 import { WebsocketClientError } from '../errors'
 import type { UrlLike, WebSocketMessage } from '../types'
@@ -32,7 +32,7 @@ export interface WebSocketClientOptions {
 export type WebSocketClientEvents = {
     'connected': () => void
     'disconnected': (code: number, reason: Buffer, isExplicitlyClosed: boolean) => void
-    'reconnect': () => void
+    'reconnect': (attempts: number) => void
     'error': (error: WebsocketClientError) => void
     'message': (message: WebSocketMessage) => void
 }
@@ -50,6 +50,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
 
     protected socket?: WebSocket
     protected explicitlyClosed = false
+    protected retryCount = 0
 
     public constructor(url: UrlLike, { protocols = [], connectTimeout = 10 * 1000, disconnectTimeout = 10 * 1000, sendTimeout = 10 * 1000, reconnect = true, heartbeat = true }: WebSocketClientOptions = {}) {
         super()
@@ -64,7 +65,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
         this.disconnectTimeout = disconnectTimeout
         this.sendTimeout = sendTimeout
         this.reconnectOptions = { enable: enableReconnect, attempts: reconnectAttempts, delay: reconnectDelay }
-        this.heartbeat = enableHeartbeat ? new Heartbeat(heartbeatTimeout, heartbeatInterval, () => this.isConnected && this.socket?.ping(), () => this.disconnect(undefined, undefined, false)) : undefined
+        this.heartbeat = enableHeartbeat ? new Heartbeat(heartbeatTimeout, heartbeatInterval, () => this.isConnected && this.socket?.ping(), () => this.disconnect(false)) : undefined
     }
 
     public get isConnected() {
@@ -81,9 +82,14 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
         await this.createConnection()
     }
 
-    public async disconnect(code?: number, reason?: string, isExplicitlyClosed = true) {
+    public async disconnect(code?: number | boolean, reason?: string, isExplicitlyClosed = true) {
         if (!this.socket) {
             return
+        }
+
+        if (isBoolean(code)) {
+            isExplicitlyClosed = code
+            code = undefined
         }
 
         if (isExplicitlyClosed) {
@@ -159,10 +165,10 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
 
             this.emit('disconnected', code, reason, this.explicitlyClosed)
 
-            if (!this.explicitlyClosed && this.reconnectOptions.enable) {
-                this.emit('reconnect')
+            if (!this.explicitlyClosed && this.reconnectOptions.enable && this.retryCount < this.reconnectOptions.attempts) {
+                this.emit('reconnect', ++this.retryCount)
 
-                withRetry(this.connect.bind(this), this.reconnectOptions.attempts, this.reconnectOptions.delay).catch((error) => {
+                sleep(this.reconnectOptions.delay).then(() => this.connect()).catch((error) => {
                     this.emit('error', new WebsocketClientError(this, 'Reconnect failed', { cause: error }))
                 })
             }
