@@ -90,7 +90,9 @@ export class RpcWebSocketServer extends Emitter<RpcWebSocketServerEvents> {
         })
 
         return response.then((r) => createSuccessResponseMessage(message.id, r)).catch((error) => {
-            return createErrorResponseMessage(message.id, error instanceof JsonRpcError ? error : new JsonRpcError(-32_603, 'Internal Error'))
+            return tap(createErrorResponseMessage(message.id, error instanceof JsonRpcError ? error : new JsonRpcError(-32_603, 'Internal Error')), () => {
+                this.emit('error', error)
+            })
         })
     }
 
