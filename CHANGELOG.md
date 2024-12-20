@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.1.7
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.1.6...v0.1.7)
+
+### 🚀 Enhancements
+
+- Add reset retry count method ([a559e5b](https://github.com/kdt310722/rpc/commit/a559e5b))
+
+### 💅 Refactors
+
+- Retry ([5caf4eb](https://github.com/kdt310722/rpc/commit/5caf4eb))
+- Handle close ([b4192db](https://github.com/kdt310722/rpc/commit/b4192db))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.1.6
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.1.5...v0.1.6)
