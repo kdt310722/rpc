@@ -76,6 +76,10 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
         return this.retryCount >= this.reconnectOptions.attempts
     }
 
+    public resetRetryCount() {
+        this.retryCount = 0
+    }
+
     public async connect() {
         this.explicitlyClosed = false
 
