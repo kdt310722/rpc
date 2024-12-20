@@ -171,23 +171,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
                 return connected.reject(new WebsocketClientError(this, 'Connection closed before it was established'))
             }
 
-            this.emit('disconnected', code, reason, this.explicitlyClosed)
-
-            if (!this.explicitlyClosed && this.reconnectOptions.enable && !this.isReconnectAttemptReached) {
-                this.emit('reconnect', ++this.retryCount)
-
-                const retry = async () => withRetry(() => this.connect(), {
-                    delay: this.reconnectOptions.delay,
-                    retries: this.reconnectOptions.attempts,
-                    onFailedAttempt: () => {
-                        this.retryCount++
-                    },
-                })
-
-                sleep(this.reconnectOptions.delay).then(() => retry()).catch((error) => {
-                    this.emit('error', new WebsocketClientError(this, 'Reconnect failed', { cause: error }))
-                })
-            }
+            this.handleClose(code, reason)
         })
 
         socket.on('error', (error) => {
@@ -202,5 +186,25 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
             this.socket = undefined
             throw error
         })
+    }
+
+    protected handleClose(code: number, reason: Buffer) {
+        this.emit('disconnected', code, reason, this.explicitlyClosed)
+
+        if (!this.explicitlyClosed && this.reconnectOptions.enable && !this.isReconnectAttemptReached) {
+            this.emit('reconnect', ++this.retryCount)
+
+            const retry = async () => withRetry(() => this.connect(), {
+                delay: this.reconnectOptions.delay,
+                retries: this.reconnectOptions.attempts,
+                onFailedAttempt: () => {
+                    this.retryCount++
+                },
+            })
+
+            sleep(this.reconnectOptions.delay).then(() => retry()).catch((error) => {
+                this.emit('error', new WebsocketClientError(this, 'Reconnect failed', { cause: error }))
+            })
+        }
     }
 }
