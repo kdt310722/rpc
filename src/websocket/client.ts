@@ -2,7 +2,7 @@ import { wrap } from '@kdt310722/utils/array'
 import { isBoolean, notNullish } from '@kdt310722/utils/common'
 import { Emitter } from '@kdt310722/utils/event'
 import { resolveNestedOptions } from '@kdt310722/utils/object'
-import { createDeferred, sleep, withTimeout } from '@kdt310722/utils/promise'
+import { createDeferred, sleep, withRetry, withTimeout } from '@kdt310722/utils/promise'
 import { WebSocket } from 'ws'
 import { WebsocketClientError } from '../errors'
 import type { UrlLike, WebSocketMessage } from '../types'
@@ -176,7 +176,15 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
             if (!this.explicitlyClosed && this.reconnectOptions.enable && !this.isReconnectAttemptReached) {
                 this.emit('reconnect', ++this.retryCount)
 
-                sleep(this.reconnectOptions.delay).then(() => this.connect()).catch((error) => {
+                const retry = async () => withRetry(() => this.connect(), {
+                    delay: this.reconnectOptions.delay,
+                    retries: this.reconnectOptions.attempts,
+                    onFailedAttempt: () => {
+                        this.retryCount++
+                    },
+                })
+
+                sleep(this.reconnectOptions.delay).then(() => retry()).catch((error) => {
                     this.emit('error', new WebsocketClientError(this, 'Reconnect failed', { cause: error }))
                 })
             }
