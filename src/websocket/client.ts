@@ -196,7 +196,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
 
             const retry = async () => withRetry(() => this.connect(), {
                 delay: this.reconnectOptions.delay,
-                retries: this.reconnectOptions.attempts,
+                retries: this.reconnectOptions.attempts - this.retryCount,
                 onFailedAttempt: () => {
                     this.retryCount++
                 },
