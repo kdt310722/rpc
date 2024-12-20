@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.1.6
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.1.5...v0.1.6)
+
+### 🚀 Enhancements
+
+- Add isReconnectAttemptReached property ([55bc90e](https://github.com/kdt310722/rpc/commit/55bc90e))
+
+### 🏡 Chore
+
+- Update deps ([eece0d7](https://github.com/kdt310722/rpc/commit/eece0d7))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.1.5
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.1.4...v0.1.5)
