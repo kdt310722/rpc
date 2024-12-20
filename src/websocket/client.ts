@@ -72,6 +72,10 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
         return this.socket?.readyState === WebSocket.OPEN
     }
 
+    public get isReconnectAttemptReached() {
+        return this.retryCount >= this.reconnectOptions.attempts
+    }
+
     public async connect() {
         this.explicitlyClosed = false
 
@@ -165,7 +169,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
 
             this.emit('disconnected', code, reason, this.explicitlyClosed)
 
-            if (!this.explicitlyClosed && this.reconnectOptions.enable && this.retryCount < this.reconnectOptions.attempts) {
+            if (!this.explicitlyClosed && this.reconnectOptions.enable && !this.isReconnectAttemptReached) {
                 this.emit('reconnect', ++this.retryCount)
 
                 sleep(this.reconnectOptions.delay).then(() => this.connect()).catch((error) => {
