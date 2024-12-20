@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.1.8
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.1.7...v0.1.8)
+
+### 🩹 Fixes
+
+- Retry ([cd7ee18](https://github.com/kdt310722/rpc/commit/cd7ee18))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.1.7
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.1.6...v0.1.7)
