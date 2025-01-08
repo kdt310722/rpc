@@ -2,7 +2,7 @@
     "name": "@kdt310722/rpc",
     "type": "module",
     "version": "0.1.8",
-    "packageManager": "pnpm@9.15.2",
+    "packageManager": "pnpm@9.15.3",
     "description": "RPC websocket client and server implements for NodeJS application",
     "author": "Diep Dang <kdt310722@gmail.com>",
     "license": "MIT",
@@ -43,7 +43,7 @@
         "prepublishOnly": "pnpm build"
     },
     "dependencies": {
-        "@kdt310722/utils": "^0.0.12",
+        "@kdt310722/utils": "^0.0.14",
         "ws": "^8.18.0"
     },
     "devDependencies": {
@@ -51,7 +51,7 @@
         "@commitlint/config-conventional": "^19.6.0",
         "@kdt310722/eslint-config": "^0.1.8",
         "@kdt310722/tsconfig": "^1.0.0",
-        "@swc/core": "^1.10.4",
+        "@swc/core": "^1.10.6",
         "@types/node": "^22.10.5",
         "@types/ws": "^8.5.13",
         "changelogen": "^0.5.7",
