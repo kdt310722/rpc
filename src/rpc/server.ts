@@ -16,7 +16,7 @@ export type RpcClientEvents = {
     notification: (method: string, params?: any) => void
 }
 
-export interface RpcClient extends Omit<Client, 'send'> {
+export interface RpcClient<TMetadata extends AnyObject = AnyObject> extends Omit<Client<TMetadata>, 'send'> {
     events: Emitter<RpcClientEvents>
     notify: (method: string, params?: any) => Promise<void>
     send: (data: any[] | AnyObject) => Promise<void>

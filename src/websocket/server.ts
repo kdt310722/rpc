@@ -2,18 +2,18 @@ import { type Server as HttpServer, type IncomingMessage, type RequestListener, 
 import type { Duplex } from 'node:stream'
 import { notNullish } from '@kdt310722/utils/common'
 import { Emitter } from '@kdt310722/utils/event'
-import { resolveNestedOptions } from '@kdt310722/utils/object'
+import { type AnyObject, resolveNestedOptions } from '@kdt310722/utils/object'
 import { createDeferred, withTimeout } from '@kdt310722/utils/promise'
 import { WebSocketServer as BaseWebSocketServer, type WebSocket } from 'ws'
 import type { WebSocketMessage } from '../types'
 import { Heartbeat } from '../utils'
 import type { HeartbeatOptions } from './client'
 
-export interface Client {
+export interface Client<TMetadata extends AnyObject = AnyObject> {
     id: number
     socket: WebSocket
     request: IncomingMessage
-    metadata: Record<string, any>
+    metadata: TMetadata
     send: (message: WebSocketMessage) => Promise<void>
 }
 
