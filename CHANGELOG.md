@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.1.10
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.1.9...v0.1.10)
+
+### 💅 Refactors
+
+- Client type ([f697ac6](https://github.com/kdt310722/rpc/commit/f697ac6))
+- Request timeout ([dd20992](https://github.com/kdt310722/rpc/commit/dd20992))
+
+### 🏡 Chore
+
+- Update deps ([c6a5597](https://github.com/kdt310722/rpc/commit/c6a5597))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.1.9
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.1.8...v0.1.9)
