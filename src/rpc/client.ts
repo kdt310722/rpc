@@ -54,7 +54,7 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
             throw new JsonRpcRequestError('Send request failed', { cause: error }).withUrl(this.socket.url).withPayload(payload)
         })
 
-        return result
+        return withTimeout(result, this.requestTimeout, () => new JsonRpcRequestError('Request timeout').withUrl(this.socket.url).withPayload(payload))
     }
 
     public async batchCall<T extends [RequestPayload, ...RequestPayload[]]>(payloads: T) {
@@ -65,7 +65,7 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
             throw new JsonRpcBatchRequestError('Send batch request failed', { cause: error }).withPayloads(data)
         })
 
-        return await Promise.all(requests.map(({ result }) => result)) as { [K in keyof T]: NonNullable<T[K]['__result']> }
+        return await withTimeout(Promise.all(requests.map(({ result }) => result)), this.requestTimeout, () => new JsonRpcRequestError('Request timeout').withUrl(this.socket.url).withPayload(data)) as { [K in keyof T]: NonNullable<T[K]['__result']> }
     }
 
     public createRequestPayload<R = any>(method: string, params?: any, id?: string | number): RequestPayload<R> {
@@ -78,11 +78,7 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
 
         this.requests.set(id, { payload, response })
 
-        const result = withTimeout(response, this.requestTimeout, () => {
-            return new JsonRpcRequestError('Request timeout').withUrl(this.socket.url).withPayload(payload)
-        })
-
-        return { payload, result }
+        return { payload, result: response }
     }
 
     protected handleRpcResponse(request: PendingRequest, response: JsonRpcResponseMessageWithNonNullId) {

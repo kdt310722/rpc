@@ -3,7 +3,7 @@ import type { JsonRpcRequestMessage, JsonRpcResponseMessage } from '../types'
 
 export class JsonRpcRequestError extends Error {
     public declare readonly url?: string
-    public declare readonly payload?: JsonRpcRequestMessage
+    public declare readonly payload?: JsonRpcRequestMessage | JsonRpcRequestMessage[]
     public declare readonly response?: JsonRpcResponseMessage
 
     public withUrl(url?: string): this {
@@ -14,7 +14,7 @@ export class JsonRpcRequestError extends Error {
         return this
     }
 
-    public withPayload(payload?: JsonRpcRequestMessage): this {
+    public withPayload(payload?: JsonRpcRequestMessage | JsonRpcRequestMessage[]): this {
         if (notUndefined(payload)) {
             Object.defineProperty(this, 'payload', { value: payload, writable: false, enumerable: true })
         }
