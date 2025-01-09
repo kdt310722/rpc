@@ -17,14 +17,14 @@ export interface Client<TMetadata extends AnyObject = AnyObject> {
     send: (message: WebSocketMessage) => Promise<void>
 }
 
-export interface BeforeUpgradeContext {
+export interface BeforeUpgradeContext<TMetadata extends AnyObject = AnyObject> {
     request: IncomingMessage
     socket: Duplex
     head: Buffer
-    metadata: Record<string, any>
+    metadata: TMetadata
 }
 
-export type BeforeUpgradeHandler = (context: BeforeUpgradeContext, upgrade: () => void) => void
+export type BeforeUpgradeHandler<TMetadata extends AnyObject = AnyObject> = (context: BeforeUpgradeContext<TMetadata>, upgrade: () => void) => void
 
 export interface WebSocketServerOptions {
     path?: string
@@ -34,19 +34,19 @@ export interface WebSocketServerOptions {
     beforeUpgrade?: BeforeUpgradeHandler
 }
 
-export type WebSocketServerEvents = {
+export type WebSocketServerEvents<TMetadata extends AnyObject = AnyObject> = {
     error: (error: unknown) => void
     listening: () => void
     close: () => void
-    connection: (client: Client) => void
+    connection: (client: Client<TMetadata>) => void
 }
 
-export class WebSocketServer extends Emitter<WebSocketServerEvents> {
+export class WebSocketServer<TMetadata extends AnyObject = AnyObject> extends Emitter<WebSocketServerEvents<TMetadata>> {
     protected readonly http: HttpServer
     protected readonly ws: BaseWebSocketServer
     protected readonly heartbeatOptions: Required<HeartbeatOptions>
     protected readonly sendTimeout: number
-    protected readonly beforeUpgrade?: BeforeUpgradeHandler
+    protected readonly beforeUpgrade?: BeforeUpgradeHandler<TMetadata>
 
     protected clientId = 0
 
@@ -94,7 +94,7 @@ export class WebSocketServer extends Emitter<WebSocketServerEvents> {
         ))
     }
 
-    protected handleConnection(metadata: Record<string, any>, socket: WebSocket, request: IncomingMessage) {
+    protected handleConnection(metadata: TMetadata, socket: WebSocket, request: IncomingMessage) {
         const id = ++this.clientId
         const client = { id, socket, request, metadata, send: (message: WebSocketMessage) => this.send(socket, message) }
 
@@ -119,7 +119,7 @@ export class WebSocketServer extends Emitter<WebSocketServerEvents> {
     }
 
     protected handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer) {
-        const metadata: Record<string, any> = {}
+        const metadata = {} as TMetadata
 
         const upgrade = () => {
             this.ws.handleUpgrade(request, socket, head, this.handleConnection.bind(this, metadata))
