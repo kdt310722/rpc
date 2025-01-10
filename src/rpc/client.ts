@@ -130,6 +130,14 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
     protected createWebSocketClient(url: UrlLike, options: WebSocketClientOptions) {
         const client = new WebSocketClient(url, options)
 
+        client.on('disconnected', () => {
+            for (const request of this.requests.values()) {
+                if (!request.response.isSettled) {
+                    request.response.reject(new JsonRpcRequestError('WebSocket disconnected').withUrl(this.socket.url).withPayload(request.payload))
+                }
+            }
+        })
+
         client.on('message', (message) => {
             this.handleMessage(message)
         })
