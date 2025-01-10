@@ -54,7 +54,13 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
             throw new JsonRpcRequestError('Send request failed', { cause: error }).withUrl(this.socket.url).withPayload(payload)
         })
 
-        return withTimeout(result, this.requestTimeout, () => new JsonRpcRequestError('Request timeout').withUrl(this.socket.url).withPayload(payload))
+        const response = await withTimeout(result, this.requestTimeout, () => new JsonRpcRequestError('Request timeout').withUrl(this.socket.url).withPayload(payload))
+
+        if (response instanceof Error) {
+            throw response
+        }
+
+        return response
     }
 
     public async batchCall<T extends [RequestPayload, ...RequestPayload[]]>(payloads: T) {
@@ -65,7 +71,17 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
             throw new JsonRpcBatchRequestError('Send batch request failed', { cause: error }).withPayloads(data)
         })
 
-        return await withTimeout(Promise.all(requests.map(({ result }) => result)), this.requestTimeout, () => new JsonRpcRequestError('Request timeout').withUrl(this.socket.url).withPayload(data)) as { [K in keyof T]: NonNullable<T[K]['__result']> }
+        const handleResponse = ({ result }: typeof requests[number]) => {
+            const _result = result as any
+
+            if (_result instanceof Error) {
+                throw _result
+            }
+
+            return _result
+        }
+
+        return await withTimeout(Promise.all(requests.map(handleResponse)), this.requestTimeout, () => new JsonRpcRequestError('Request timeout').withUrl(this.socket.url).withPayload(data)) as { [K in keyof T]: NonNullable<T[K]['__result']> }
     }
 
     public createRequestPayload<R = any>(method: string, params?: any, id?: string | number): RequestPayload<R> {
@@ -83,7 +99,7 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
 
     protected handleRpcResponse(request: PendingRequest, response: JsonRpcResponseMessageWithNonNullId) {
         if (isJsonRpcErrorResponseMessage(response)) {
-            return request.response.reject(new JsonRpcRequestError('Request failed', { cause: toJsonRpcError(response.error) }).withUrl(this.socket.url).withPayload(request.payload))
+            return request.response.resolve(new JsonRpcRequestError('Request failed', { cause: toJsonRpcError(response.error) }).withUrl(this.socket.url).withPayload(request.payload))
         }
 
         return request.response.resolve(response.result)
@@ -133,7 +149,7 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
         client.on('disconnected', () => {
             for (const request of this.requests.values()) {
                 if (!request.response.isSettled) {
-                    request.response.reject(new JsonRpcRequestError('WebSocket disconnected').withUrl(this.socket.url).withPayload(request.payload))
+                    request.response.resolve(new JsonRpcRequestError('WebSocket disconnected').withUrl(this.socket.url).withPayload(request.payload))
                 }
             }
         })
