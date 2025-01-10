@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.1.12
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.1.11...v0.1.12)
+
+### 🩹 Fixes
+
+- Unhandle rejection ([ac62444](https://github.com/kdt310722/rpc/commit/ac62444))
+
+### 🏡 Chore
+
+- Update deps ([adbe877](https://github.com/kdt310722/rpc/commit/adbe877))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.1.11
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.1.10...v0.1.11)
