@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.1.11
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.1.10...v0.1.11)
+
+### 🩹 Fixes
+
+- Reject pending requests if websocket is disconnected ([5801399](https://github.com/kdt310722/rpc/commit/5801399))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.1.10
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.1.9...v0.1.10)
