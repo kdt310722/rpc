@@ -1,15 +1,10 @@
-import { isArray } from '@kdt310722/utils/array'
-import { join } from '@kdt310722/utils/buffer'
-import { isNull, notUndefined } from '@kdt310722/utils/common'
 import { Emitter } from '@kdt310722/utils/event'
-import { tap, tryCatch } from '@kdt310722/utils/function'
-import { parseJson, stringifyJson } from '@kdt310722/utils/json'
+import { stringifyJson } from '@kdt310722/utils/json'
 import type { AnyObject } from '@kdt310722/utils/object'
-import { type Awaitable, withTimeout } from '@kdt310722/utils/promise'
-import type { RawData, WebSocket } from 'ws'
-import { JsonRpcError } from '../errors'
-import type { JsonRpcMessage, WebSocketMessage } from '../types'
-import { createErrorResponseMessage, createNotifyMessage, createSuccessResponseMessage, isJsonRpcMessage, isJsonRpcNotifyMessage, isJsonRpcRequestMessage } from '../utils'
+import type { WebSocket } from 'ws'
+import type { WebSocketMessage } from '../types'
+import { createNotifyMessage } from '../utils'
+import { RPC_NOTIFY_MESSAGE, RpcMessageHandler, type RpcMessageHandlerOptions, type RpcMethodHandler } from '../utils/rpc-message-handler'
 import { type Client, WebSocketServer, type WebSocketServerOptions } from '../websocket'
 
 export type RpcClientEvents = {
@@ -23,12 +18,8 @@ export interface RpcClient<TMetadata extends AnyObject = AnyObject> extends Omit
     sendRaw: (data: WebSocketMessage) => Promise<void>
 }
 
-export type RpcWebSocketMethodHandler<TRpcClient extends RpcClient = RpcClient> = (params: any, client: TRpcClient) => Awaitable<any>
-
-export interface RpcWebSocketServerOptions<TRpcClient extends RpcClient = RpcClient> extends WebSocketServerOptions {
-    maxBatchSize?: number
-    operationTimeout?: number
-    methods?: Record<string, RpcWebSocketMethodHandler<TRpcClient>>
+export interface RpcWebSocketServerOptions<TRpcClient extends RpcClient = RpcClient> extends WebSocketServerOptions, RpcMessageHandlerOptions {
+    methods?: Record<string, RpcMethodHandler<TRpcClient>>
 }
 
 export type RpcWebSocketServerEvents<TRpcClient extends RpcClient = RpcClient> = {
@@ -40,26 +31,17 @@ export type RpcWebSocketServerEvents<TRpcClient extends RpcClient = RpcClient> =
 
 export class RpcWebSocketServer<TRpcClient extends RpcClient = RpcClient> extends Emitter<RpcWebSocketServerEvents<TRpcClient>> {
     public readonly server: WebSocketServer<TRpcClient['metadata']>
+    public readonly messageHandler: RpcMessageHandler
 
-    protected readonly maxBatchSize: number
-    protected readonly operationTimeout: number
-    protected readonly methods: Record<string, RpcWebSocketMethodHandler<TRpcClient>>
-
-    public constructor(host: string, port: number, { maxBatchSize = 100, operationTimeout = 60 * 1000, methods = {}, ...options }: RpcWebSocketServerOptions = {}) {
+    public constructor(host: string, port: number, { methods = {}, ...options }: RpcWebSocketServerOptions = {}) {
         super()
 
         this.server = this.createServer(host, port, options)
-        this.maxBatchSize = maxBatchSize
-        this.operationTimeout = operationTimeout
-        this.methods = methods
-    }
+        this.messageHandler = new RpcMessageHandler<TRpcClient>(methods as any, options)
 
-    public addMethod(name: string, handler: RpcWebSocketMethodHandler<TRpcClient>, override = false) {
-        if (this.methods[name] && !override) {
-            throw new Error(`Method ${name} already exists`)
-        }
-
-        this.methods[name] = handler
+        this.messageHandler.on('notification', (method, params, context) => this.emit('notification', context, method, params))
+        this.messageHandler.on('unhandledMessage', (message, context) => this.emit('unhandledMessage', context, message))
+        this.messageHandler.on('error', (error) => this.emit('error', error))
     }
 
     public async notify(socket: WebSocket, method: string, params?: any, clientId?: number) {
@@ -68,84 +50,6 @@ export class RpcWebSocketServer<TRpcClient extends RpcClient = RpcClient> extend
 
     public async send(socket: WebSocket, data: any[] | AnyObject, clientId?: number) {
         return this.server.send(socket, stringifyJson(data), clientId)
-    }
-
-    protected async getRpcResponse(client: TRpcClient, message: JsonRpcMessage) {
-        if (isJsonRpcNotifyMessage(message)) {
-            return tap(void 0, () => client.events.emit('notification', message.method, message.params))
-        }
-
-        if (!isJsonRpcRequestMessage(message)) {
-            return createErrorResponseMessage(message.id ?? null, new JsonRpcError(-32_600, 'Invalid Request'))
-        }
-
-        const handler = this.methods[message.method]
-
-        if (!handler) {
-            return createErrorResponseMessage(message.id, new JsonRpcError(-32_601, 'Method not found'))
-        }
-
-        const response = withTimeout(Promise.resolve().then(() => handler(message.params, client)), this.operationTimeout, () => {
-            return new JsonRpcError(-32_000, 'Operation Timeout')
-        })
-
-        return response.then((r) => createSuccessResponseMessage(message.id, r)).catch((error) => {
-            return tap(createErrorResponseMessage(message.id, error instanceof JsonRpcError ? error : new JsonRpcError(-32_603, 'Internal Error')), () => {
-                this.emit('error', error)
-            })
-        })
-    }
-
-    protected handleRpcMessage(client: TRpcClient, message: JsonRpcMessage) {
-        this.getRpcResponse(client, message).then((response) => {
-            if (notUndefined(response)) {
-                client.send(response).catch((error) => this.emit('error', error))
-            }
-        })
-    }
-
-    protected handleRpcBatchMessage(client: TRpcClient, messages: any[]) {
-        if (messages.length > this.maxBatchSize) {
-            return client.send(createErrorResponseMessage(null, new JsonRpcError(-32_600, 'Batch size exceeded')))
-        }
-
-        const responses = messages.map((message) => {
-            if (!isJsonRpcMessage(message)) {
-                return createErrorResponseMessage(null, new JsonRpcError(-32_600, 'Invalid Request'))
-            }
-
-            return this.getRpcResponse(client, message)
-        })
-
-        const result = Promise.all(responses).catch((error) => {
-            return tap(createErrorResponseMessage(null, new JsonRpcError(-32_603, 'Internal Error')), () => this.emit('error', error))
-        })
-
-        result.then((r) => {
-            client.send(isArray(r) ? r.filter(notUndefined) : r).catch((error) => this.emit('error', error))
-        })
-
-        return true
-    }
-
-    protected handleWebSocketMessage(client: TRpcClient, message: RawData) {
-        const data = tryCatch(() => parseJson(join(message)), null)
-
-        if (isJsonRpcMessage(data)) {
-            return this.handleRpcMessage(client, data)
-        }
-
-        if (isArray(data)) {
-            return this.handleRpcBatchMessage(client, data)
-        }
-
-        const response = createErrorResponseMessage(null, isNull(data) ? new JsonRpcError(-32_700, 'Invalid JSON') : new JsonRpcError(-32_600, 'Invalid Request'))
-
-        client.send(response).catch((error) => {
-            this.emit('error', error)
-        })
-
-        return this.emit('unhandledMessage', client, data)
     }
 
     protected handleConnection(client: Client<TRpcClient['metadata']>) {
@@ -161,7 +65,11 @@ export class RpcWebSocketServer<TRpcClient extends RpcClient = RpcClient> extend
         })
 
         client.socket.on('message', (message) => {
-            this.handleWebSocketMessage(rpcClient, message)
+            this.messageHandler.handleMessage(message, rpcClient).then(async (r) => {
+                if (r !== RPC_NOTIFY_MESSAGE) {
+                    await send(r)
+                }
+            })
         })
 
         this.emit('connection', rpcClient)
