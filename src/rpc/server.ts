@@ -3,8 +3,7 @@ import { stringifyJson } from '@kdt310722/utils/json'
 import type { AnyObject } from '@kdt310722/utils/object'
 import type { WebSocket } from 'ws'
 import type { WebSocketMessage } from '../types'
-import { createNotifyMessage } from '../utils'
-import { RPC_NOTIFY_MESSAGE, RpcMessageHandler, type RpcMessageHandlerOptions, type RpcMethodHandler } from '../utils/rpc-message-handler'
+import { RPC_NOTIFY_MESSAGE, RpcMessageHandler, type RpcMessageHandlerOptions, type RpcMethodHandler, createNotifyMessage } from '../utils'
 import { type Client, WebSocketServer, type WebSocketServerOptions } from '../websocket'
 
 export type RpcClientEvents = {
