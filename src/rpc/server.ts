@@ -43,6 +43,10 @@ export class RpcWebSocketServer<TRpcClient extends RpcClient = RpcClient> extend
         this.messageHandler.on('error', (error) => this.emit('error', error))
     }
 
+    public addMethod(name: string, handler: RpcMethodHandler<TRpcClient>, override = false) {
+        return this.messageHandler.addMethod(name, handler, override)
+    }
+
     public async notify(socket: WebSocket, method: string, params?: any, clientId?: number) {
         return this.server.send(socket, stringifyJson(createNotifyMessage(method, params)), clientId)
     }
