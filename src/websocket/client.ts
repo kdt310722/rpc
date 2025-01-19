@@ -51,6 +51,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
     protected socket?: WebSocket
     protected explicitlyClosed = false
     protected retryCount = 0
+    protected isReconnecting = false
 
     public constructor(url: UrlLike, { protocols = [], connectTimeout = 10 * 1000, disconnectTimeout = 10 * 1000, sendTimeout = 10 * 1000, reconnect = true, heartbeat = true }: WebSocketClientOptions = {}) {
         super()
@@ -191,20 +192,28 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
     protected handleClose(code: number, reason: Buffer) {
         this.emit('disconnected', code, reason, this.explicitlyClosed)
 
-        if (!this.explicitlyClosed && this.reconnectOptions.enable && !this.isReconnectAttemptReached) {
+        if (!this.explicitlyClosed && !this.isReconnecting && this.reconnectOptions.enable && !this.isReconnectAttemptReached) {
             this.emit('reconnect', ++this.retryCount)
 
             const retry = async () => withRetry(() => this.connect(), {
                 delay: this.reconnectOptions.delay,
                 retries: this.reconnectOptions.attempts - this.retryCount,
                 onFailedAttempt: () => {
-                    this.retryCount++
+                    const count = this.retryCount++
+
+                    if (!this.isReconnectAttemptReached) {
+                        this.emit('reconnect', count)
+                    }
                 },
             })
 
-            sleep(this.reconnectOptions.delay).then(() => retry()).catch((error) => {
+            this.isReconnecting = true
+
+            const promise = sleep(this.reconnectOptions.delay).then(() => retry()).catch((error) => {
                 this.emit('error', new WebsocketClientError(this, 'Reconnect failed', { cause: error }))
             })
+
+            promise.finally(() => this.isReconnecting = false)
         }
     }
 }
