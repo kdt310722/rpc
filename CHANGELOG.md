@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.1.15
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.1.14...v0.1.15)
+
+### 🩹 Fixes
+
+- Reconnect ([0de9aa8](https://github.com/kdt310722/rpc/commit/0de9aa8))
+
+### 🏡 Chore
+
+- Update deps ([7c519d0](https://github.com/kdt310722/rpc/commit/7c519d0))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.1.14
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.1.13...v0.1.14)
