@@ -41,6 +41,8 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
     public readonly url: string
     public readonly protocols: string[]
 
+    public isReconnecting = false
+
     protected readonly connectTimeout: number
     protected readonly disconnectTimeout: number
     protected readonly sendTimeout: number
@@ -51,7 +53,6 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
     protected socket?: WebSocket
     protected explicitlyClosed = false
     protected retryCount = 0
-    protected isReconnecting = false
 
     public constructor(url: UrlLike, { protocols = [], connectTimeout = 10 * 1000, disconnectTimeout = 10 * 1000, sendTimeout = 10 * 1000, reconnect = true, heartbeat = true }: WebSocketClientOptions = {}) {
         super()
@@ -199,11 +200,7 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
                 delay: this.reconnectOptions.delay,
                 retries: this.reconnectOptions.attempts - this.retryCount,
                 onFailedAttempt: () => {
-                    const count = this.retryCount++
-
-                    if (!this.isReconnectAttemptReached) {
-                        this.emit('reconnect', count)
-                    }
+                    this.emit('reconnect', ++this.retryCount)
                 },
             })
 
