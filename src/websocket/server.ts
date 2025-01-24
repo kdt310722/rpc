@@ -86,11 +86,11 @@ export class WebSocketServer<TMetadata extends AnyObject = AnyObject> extends Em
         const sent = createDeferred<void>()
 
         socket.send(message, (error) => {
-            return notNullish(error) ? sent.reject(Object.assign(new Error('Failed to send message to WebSocket client', { cause: error }), { clientId, message })) : sent.resolve()
+            return notNullish(error) ? sent.reject(Object.assign(new Error('Failed to send message to WebSocket client', { cause: error }), { clientId, data: message })) : sent.resolve()
         })
 
         await withTimeout(sent, this.sendTimeout, () => (
-            Object.assign(new Error('Send timeout'), { clientId, message })
+            Object.assign(new Error('Send timeout'), { clientId, data: message })
         ))
     }
 

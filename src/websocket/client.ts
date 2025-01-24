@@ -132,11 +132,11 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
         const sent = createDeferred<void>()
 
         this.socket.send(message, (error) => {
-            return notNullish(error) ? sent.reject(Object.assign(new WebsocketClientError(this, 'Failed to send message to WebSocket server', { cause: error }), { message })) : sent.resolve()
+            return notNullish(error) ? sent.reject(Object.assign(new WebsocketClientError(this, 'Failed to send message to WebSocket server', { cause: error }), { data: message })) : sent.resolve()
         })
 
         await withTimeout(sent, this.sendTimeout, () => (
-            Object.assign(new WebsocketClientError(this, 'Send timeout'), { message })
+            Object.assign(new WebsocketClientError(this, 'Send timeout'), { data: message })
         ))
     }
 
