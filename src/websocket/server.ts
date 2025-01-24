@@ -38,6 +38,7 @@ export interface WebSocketServerOptions {
 
 export type WebSocketServerEvents<TMetadata extends AnyObject = AnyObject> = {
     error: (error: unknown) => void
+    clientError: (error: unknown, client: Client<TMetadata>) => void
     listening: () => void
     close: () => void
     connection: (client: Client<TMetadata>) => void
@@ -102,8 +103,10 @@ export class WebSocketServer<TMetadata extends AnyObject = AnyObject> extends Em
 
         const heartbeat = new Heartbeat(this.heartbeatOptions.timeout, this.heartbeatOptions.interval, () => socket.ping(), () => {
             socket.close()
+            this.emit('clientError', new Error('Heartbeat timeout'), client)
         })
 
+        socket.on('error', (error) => this.emit('clientError', error, client))
         socket.on('close', () => heartbeat.stop())
         socket.on('pong', () => heartbeat.resolve())
         socket.on('message', () => heartbeat.resolve())
