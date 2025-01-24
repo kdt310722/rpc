@@ -2,15 +2,17 @@ import { type Server as HttpServer, type IncomingMessage, type RequestListener, 
 import type { Duplex } from 'node:stream'
 import { notNullish } from '@kdt310722/utils/common'
 import { Emitter } from '@kdt310722/utils/event'
-import { type AnyObject, resolveNestedOptions } from '@kdt310722/utils/object'
+import { isNumber } from '@kdt310722/utils/number'
+import { type AnyObject, pick, resolveNestedOptions } from '@kdt310722/utils/object'
 import { createDeferred, withTimeout } from '@kdt310722/utils/promise'
 import { WebSocketServer as BaseWebSocketServer, type WebSocket } from 'ws'
 import type { WebSocketMessage } from '../types'
-import { Heartbeat } from '../utils'
+import { Heartbeat, getRequestClientIp } from '../utils'
 import type { HeartbeatOptions } from './client'
 
 export interface Client<TMetadata extends AnyObject = AnyObject> {
     id: number
+    ip: string
     socket: WebSocket
     request: IncomingMessage
     metadata: TMetadata
@@ -47,6 +49,7 @@ export class WebSocketServer<TMetadata extends AnyObject = AnyObject> extends Em
     protected readonly heartbeatOptions: Required<HeartbeatOptions>
     protected readonly sendTimeout: number
     protected readonly beforeUpgrade?: BeforeUpgradeHandler<TMetadata>
+    protected readonly clients: Record<number, Client<TMetadata>> = {}
 
     protected clientId = 0
 
@@ -86,17 +89,16 @@ export class WebSocketServer<TMetadata extends AnyObject = AnyObject> extends Em
         const sent = createDeferred<void>()
 
         socket.send(message, (error) => {
-            return notNullish(error) ? sent.reject(Object.assign(new Error('Failed to send message to WebSocket client', { cause: error }), { clientId, data: message })) : sent.resolve()
+            return notNullish(error) ? sent.reject(this.createClientError('Failed to send message to WebSocket client', { cause: error }, clientId, { data: message })) : sent.resolve()
         })
 
-        await withTimeout(sent, this.sendTimeout, () => (
-            Object.assign(new Error('Send timeout'), { clientId, data: message })
-        ))
+        await withTimeout(sent, this.sendTimeout, () => this.createClientError('Send timeout', {}, clientId, { data: message }))
     }
 
     protected handleConnection(metadata: TMetadata, socket: WebSocket, request: IncomingMessage) {
         const id = ++this.clientId
-        const client = { id, socket, request, metadata, send: (message: WebSocketMessage) => this.send(socket, message) }
+        const ip = getRequestClientIp(request)
+        const client = this.clients[id] = { id, ip, socket, request, metadata, send: (message: WebSocketMessage) => this.send(socket, message, id) }
 
         const heartbeat = new Heartbeat(this.heartbeatOptions.timeout, this.heartbeatOptions.interval, () => socket.ping(), () => {
             socket.close()
@@ -151,5 +153,13 @@ export class WebSocketServer<TMetadata extends AnyObject = AnyObject> extends Em
         server.on('upgrade', this.handleUpgrade.bind(this))
 
         return server
+    }
+
+    protected createClientError(message: string, options?: ErrorOptions, client?: number | Client<TMetadata>, data: AnyObject = {}) {
+        if (isNumber(client)) {
+            client = this.clients[client]
+        }
+
+        return Object.assign(new Error(message, options), { ...(notNullish(client) ? { client: pick(client, 'id', 'ip', 'metadata') } : {}), ...data })
     }
 }

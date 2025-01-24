@@ -1,4 +1,5 @@
 export * from './errors'
 export * from './heartbeat'
 export * from './messages'
+export * from './requests'
 export * from './rpc-message-handler'
