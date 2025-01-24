@@ -60,8 +60,8 @@ export class WebSocketClient extends Emitter<WebSocketClientEvents> {
         this.url = new URL(url).href
         this.protocols = wrap(protocols)
 
-        const { enable: enableReconnect = true, attempts: reconnectAttempts = 3, delay: reconnectDelay = 1000 } = resolveNestedOptions(reconnect) || {}
-        const { enable: enableHeartbeat = true, interval: heartbeatInterval = 30 * 1000, timeout: heartbeatTimeout = 10 * 1000 } = resolveNestedOptions(heartbeat) || {}
+        const { enable: enableReconnect = true, attempts: reconnectAttempts = 3, delay: reconnectDelay = 1000 } = resolveNestedOptions(reconnect) || { enable: false }
+        const { enable: enableHeartbeat = true, interval: heartbeatInterval = 30 * 1000, timeout: heartbeatTimeout = 10 * 1000 } = resolveNestedOptions(heartbeat) || { enable: false }
 
         this.connectTimeout = connectTimeout
         this.disconnectTimeout = disconnectTimeout

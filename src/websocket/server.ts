@@ -54,7 +54,7 @@ export class WebSocketServer<TMetadata extends AnyObject = AnyObject> extends Em
         super()
 
         const { path = '/', listener, heartbeat = true, sendTimeout = 10 * 1000, beforeUpgrade } = options
-        const { enable: enableHeartbeat = true, interval = 30 * 1000, timeout = 10 * 1000 } = resolveNestedOptions(heartbeat) || {}
+        const { enable: enableHeartbeat = true, interval = 30 * 1000, timeout = 10 * 1000 } = resolveNestedOptions(heartbeat) || { enable: false }
 
         this.ws = this.createWebSocketServer(path)
         this.http = this.createHttpServer(listener)
