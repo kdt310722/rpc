@@ -3,6 +3,37 @@
 All notable changes to this project will be documented in this file.
 See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v0.2.0
+
+[compare changes](https://github.com/kdt310722/rpc/compare/v0.1.16...v0.2.0)
+
+### 🚀 Enhancements
+
+- Optimize client errors ([b135a91](https://github.com/kdt310722/rpc/commit/b135a91))
+- Add clientError event ([e4b1ff6](https://github.com/kdt310722/rpc/commit/e4b1ff6))
+- Data encoder & decoder ([0e2f211](https://github.com/kdt310722/rpc/commit/0e2f211))
+
+### 🩹 Fixes
+
+- Error message ([57e5927](https://github.com/kdt310722/rpc/commit/57e5927))
+- Config ([3bb1082](https://github.com/kdt310722/rpc/commit/3bb1082))
+
+### 💅 Refactors
+
+- ⚠️  Rpc message type ([0c3a3bc](https://github.com/kdt310722/rpc/commit/0c3a3bc))
+
+### 🏡 Chore
+
+- Update deps ([0661672](https://github.com/kdt310722/rpc/commit/0661672))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️  Rpc message type ([0c3a3bc](https://github.com/kdt310722/rpc/commit/0c3a3bc))
+
+### ❤️ Contributors
+
+- Diep Dang <kdt310722@gmail.com>
+
 ## v0.1.16
 
 [compare changes](https://github.com/kdt310722/rpc/compare/v0.1.15...v0.1.16)
