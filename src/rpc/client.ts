@@ -5,12 +5,14 @@ import { tryCatch } from '@kdt310722/utils/function'
 import { parseJson, stringifyJson } from '@kdt310722/utils/json'
 import { type DeferredPromise, createDeferred, withTimeout } from '@kdt310722/utils/promise'
 import { JsonRpcBatchRequestError, type JsonRpcError, JsonRpcRequestError } from '../errors'
-import type { JsonRpcMessage, JsonRpcRequestMessage, JsonRpcResponseMessageWithNonNullId, UrlLike, WebSocketMessage } from '../types'
+import type { DataDecoder, DataEncoder, JsonRpcMessage, JsonRpcRequestMessage, JsonRpcResponseMessageWithNonNullId, UrlLike, WebSocketMessage } from '../types'
 import { createNotifyMessage, createRequestMessage, isJsonRpcErrorResponseMessage, isJsonRpcMessage, isJsonRpcNotifyMessage, isJsonRpcResponseHasNonNullableId, isJsonRpcResponseMessage, toJsonRpcError } from '../utils'
 import { WebSocketClient, type WebSocketClientOptions } from '../websocket'
 
 export interface RpcWebsocketClientOptions extends WebSocketClientOptions {
     requestTimeout?: number
+    dataEncoder?: DataEncoder
+    dataDecoder?: DataDecoder
 }
 
 export type RpcWebSocketClientEvents = {
@@ -30,27 +32,32 @@ export type RequestPayload<R = any> = JsonRpcRequestMessage & { readonly __resul
 export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
     public readonly socket: WebSocketClient
 
+    protected readonly dataEncoder: DataEncoder
+    protected readonly dataDecoder: DataDecoder
+
     protected readonly requestTimeout: number
     protected readonly requests: Map<string | number, PendingRequest>
 
     protected requestId = 0
 
-    public constructor(url: UrlLike, { requestTimeout = 10 * 1000, ...options }: RpcWebsocketClientOptions = {}) {
+    public constructor(url: UrlLike, { requestTimeout = 10 * 1000, dataEncoder = stringifyJson, dataDecoder = (data) => parseJson(join(data)), ...options }: RpcWebsocketClientOptions = {}) {
         super()
 
+        this.dataEncoder = dataEncoder
+        this.dataDecoder = dataDecoder
         this.requestTimeout = requestTimeout
         this.requests = new Map()
         this.socket = this.createWebSocketClient(url, options)
     }
 
     public async notify(method: string, params?: any) {
-        return this.socket.send(stringifyJson(createNotifyMessage(method, params)))
+        return this.socket.send(this.dataEncoder(createNotifyMessage(method, params)))
     }
 
     public async call<R = any>(method: string, params?: any, id?: string | number) {
         const { payload, result } = this.createRequest(this.createRequestPayload<R>(method, params, id))
 
-        await this.socket.send(stringifyJson(payload)).catch((error) => {
+        await this.socket.send(this.dataEncoder(payload)).catch((error) => {
             throw new JsonRpcRequestError('Send request failed', { cause: error }).withUrl(this.socket.url).withPayload(payload)
         })
 
@@ -67,7 +74,7 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
         const requests = payloads.map((payload) => this.createRequest(payload))
         const data = requests.map(({ payload }) => payload)
 
-        await this.socket.send(stringifyJson(data)).catch((error) => {
+        await this.socket.send(this.dataEncoder(data)).catch((error) => {
             throw new JsonRpcBatchRequestError('Send batch request failed', { cause: error }).withPayloads(data)
         })
 
@@ -126,7 +133,7 @@ export class RpcWebSocketClient extends Emitter<RpcWebSocketClientEvents> {
     }
 
     protected handleMessage(message: WebSocketMessage) {
-        const data = tryCatch(() => parseJson(join(message)), null)
+        const data = tryCatch(() => this.dataDecoder(message), null)
 
         if (isJsonRpcMessage(data)) {
             return this.handleRpcMessage(data)

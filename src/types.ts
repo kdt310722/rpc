@@ -46,3 +46,7 @@ export type JsonRpcResponseMessageWithNonNullId<R = any> = (Omit<JsonRpcSuccessR
 }
 
 export type JsonRpcMessage = JsonRpcRequestMessage | JsonRpcNotifyMessage | JsonRpcResponseMessage
+
+export type DataEncoder = (data: JsonRpcMessage[] | JsonRpcMessage) => WebSocketMessage
+
+export type DataDecoder = (data: WebSocketMessage) => JsonRpcMessage | JsonRpcMessage[]
