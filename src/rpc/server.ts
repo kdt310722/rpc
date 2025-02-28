@@ -52,11 +52,15 @@ export class RpcWebSocketServer<TRpcClient extends RpcClient = RpcClient> extend
     }
 
     public async notify(socket: WebSocket, method: string, params?: any, clientId?: number) {
-        return this.server.send(socket, this.dataEncoder(createNotifyMessage(method, params)), clientId)
+        return this.server.send(socket, this.getNotifyMessage(method, params), clientId)
     }
 
     public async send(socket: WebSocket, data: JsonRpcMessage[] | JsonRpcMessage, clientId?: number) {
         return this.server.send(socket, this.dataEncoder(data), clientId)
+    }
+
+    public getNotifyMessage(method: string, params?: any) {
+        return this.dataEncoder(createNotifyMessage(method, params))
     }
 
     protected handleConnection(client: Client<TRpcClient['metadata']>) {
