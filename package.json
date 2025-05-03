@@ -2,7 +2,7 @@
     "name": "@kdt310722/rpc",
     "type": "module",
     "version": "0.2.1",
-    "packageManager": "pnpm@10.8.1",
+    "packageManager": "pnpm@10.10.0",
     "description": "RPC websocket client and server implements for NodeJS application",
     "author": "Diep Dang <kdt310722@gmail.com>",
     "license": "MIT",
@@ -27,7 +27,7 @@
         "src"
     ],
     "engines": {
-        "node": ">=22.14.0"
+        "node": ">=22.15.0"
     },
     "publishConfig": {
         "access": "public"
@@ -44,26 +44,26 @@
     },
     "dependencies": {
         "@kdt310722/utils": "^0.0.17",
-        "ws": "^8.18.1"
+        "ws": "^8.18.2"
     },
     "devDependencies": {
         "@commitlint/cli": "^19.8.0",
         "@commitlint/config-conventional": "^19.8.0",
         "@kdt310722/eslint-config": "^0.1.9",
         "@kdt310722/tsconfig": "^1.0.0",
-        "@swc/core": "^1.11.21",
-        "@types/node": "^22.14.1",
+        "@swc/core": "^1.11.24",
+        "@types/node": "^22.15.3",
         "@types/ws": "^8.18.1",
         "changelogen": "^0.6.1",
-        "eslint": "^9.25.0",
+        "eslint": "^9.26.0",
         "execa": "^9.5.2",
         "lint-staged": "^15.5.1",
         "npm-check-updates": "^17.1.18",
         "only-allow": "^1.2.1",
         "rimraf": "^6.0.1",
-        "simple-git-hooks": "^2.12.1",
+        "simple-git-hooks": "^2.13.0",
         "tsup": "^8.4.0",
-        "tsx": "^4.19.3",
+        "tsx": "^4.19.4",
         "typescript": "^5.8.3"
     },
     "commitlint": {
