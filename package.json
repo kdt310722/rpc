@@ -47,12 +47,12 @@
         "ws": "^8.18.2"
     },
     "devDependencies": {
-        "@commitlint/cli": "^19.8.0",
-        "@commitlint/config-conventional": "^19.8.0",
+        "@commitlint/cli": "^19.8.1",
+        "@commitlint/config-conventional": "^19.8.1",
         "@kdt310722/eslint-config": "^0.1.9",
         "@kdt310722/tsconfig": "^1.0.0",
         "@swc/core": "^1.11.24",
-        "@types/node": "^22.15.15",
+        "@types/node": "^22.15.16",
         "@types/ws": "^8.18.1",
         "changelogen": "^0.6.1",
         "eslint": "^9.26.0",
