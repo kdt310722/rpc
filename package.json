@@ -43,7 +43,7 @@
         "prepublishOnly": "pnpm build"
     },
     "dependencies": {
-        "@kdt310722/utils": "^0.0.17",
+        "@kdt310722/utils": "^0.0.19",
         "ws": "^8.18.2"
     },
     "devDependencies": {
@@ -52,7 +52,7 @@
         "@kdt310722/eslint-config": "^0.2.0",
         "@kdt310722/tsconfig": "^1.0.0",
         "@swc/core": "^1.11.29",
-        "@types/node": "^22.15.24",
+        "@types/node": "^22.15.27",
         "@types/ws": "^8.18.1",
         "changelogen": "^0.6.1",
         "eslint": "^9.27.0",
