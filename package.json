@@ -44,7 +44,7 @@
     },
     "dependencies": {
         "@kdt310722/utils": "^0.0.19",
-        "ws": "^8.18.2"
+        "ws": "^8.18.3"
     },
     "devDependencies": {
         "@commitlint/cli": "^19.8.1",
