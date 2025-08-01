@@ -2,7 +2,7 @@
     "name": "@kdt310722/rpc",
     "type": "module",
     "version": "0.2.1",
-    "packageManager": "pnpm@10.13.1",
+    "packageManager": "pnpm@10.14.0",
     "description": "RPC websocket client and server implements for NodeJS application",
     "author": "Diep Dang <kdt310722@gmail.com>",
     "license": "MIT",
@@ -27,7 +27,7 @@
         "src"
     ],
     "engines": {
-        "node": ">=22.17.1"
+        "node": ">=22.18.0"
     },
     "publishConfig": {
         "access": "public"
@@ -61,10 +61,10 @@
         "npm-check-updates": "^18.0.2",
         "only-allow": "^1.2.1",
         "rimraf": "^6.0.1",
-        "simple-git-hooks": "^2.13.0",
+        "simple-git-hooks": "^2.13.1",
         "tsup": "^8.5.0",
         "tsx": "^4.20.3",
-        "typescript": "^5.8.3"
+        "typescript": "^5.9.2"
     },
     "commitlint": {
         "extends": "@commitlint/config-conventional"
