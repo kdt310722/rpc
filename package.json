@@ -55,7 +55,7 @@
         "@types/node": "^22.18.1",
         "@types/ws": "^8.18.1",
         "changelogen": "^0.6.2",
-        "eslint": "^9.34.0",
+        "eslint": "^9.35.0",
         "execa": "^9.6.0",
         "lint-staged": "^16.1.6",
         "npm-check-updates": "^18.0.3",
