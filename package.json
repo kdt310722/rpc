@@ -63,7 +63,7 @@
         "rimraf": "^6.0.1",
         "simple-git-hooks": "^2.13.1",
         "tsup": "^8.5.0",
-        "tsx": "^4.20.5",
+        "tsx": "^4.20.6",
         "typescript": "^5.9.2"
     },
     "commitlint": {
