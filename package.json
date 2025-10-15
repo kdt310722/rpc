@@ -2,7 +2,7 @@
     "name": "@kdt310722/rpc",
     "type": "module",
     "version": "0.2.1",
-    "packageManager": "pnpm@10.17.1",
+    "packageManager": "pnpm@10.18.3",
     "description": "RPC websocket client and server implements for NodeJS application",
     "author": "Diep Dang <kdt310722@gmail.com>",
     "license": "MIT",
@@ -47,24 +47,24 @@
         "ws": "^8.18.3"
     },
     "devDependencies": {
-        "@commitlint/cli": "^20.0.0",
+        "@commitlint/cli": "^20.1.0",
         "@commitlint/config-conventional": "^20.0.0",
         "@kdt310722/eslint-config": "^0.2.0",
         "@kdt310722/tsconfig": "^1.0.0",
         "@swc/core": "^1.13.20",
-        "@types/node": "^22.18.6",
+        "@types/node": "^22.18.10",
         "@types/ws": "^8.18.1",
         "changelogen": "^0.6.2",
-        "eslint": "^9.36.0",
+        "eslint": "^9.37.0",
         "execa": "^9.6.0",
-        "lint-staged": "^16.2.1",
+        "lint-staged": "^16.2.4",
         "npm-check-updates": "^19.1.1",
         "only-allow": "^1.2.1",
         "rimraf": "^6.0.1",
         "simple-git-hooks": "^2.13.1",
         "tsup": "^8.5.0",
         "tsx": "^4.20.6",
-        "typescript": "^5.9.2"
+        "typescript": "^5.9.3"
     },
     "commitlint": {
         "extends": "@commitlint/config-conventional"
