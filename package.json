@@ -27,7 +27,7 @@
         "src"
     ],
     "engines": {
-        "node": ">=22.20.0"
+        "node": ">=22.21.0"
     },
     "publishConfig": {
         "access": "public"
@@ -52,12 +52,12 @@
         "@kdt310722/eslint-config": "^0.2.0",
         "@kdt310722/tsconfig": "^1.0.0",
         "@swc/core": "^1.13.20",
-        "@types/node": "^22.18.11",
+        "@types/node": "^22.18.12",
         "@types/ws": "^8.18.1",
         "changelogen": "^0.6.2",
         "eslint": "^9.38.0",
         "execa": "^9.6.0",
-        "lint-staged": "^16.2.4",
+        "lint-staged": "^16.2.5",
         "npm-check-updates": "^19.1.1",
         "only-allow": "^1.2.1",
         "rimraf": "^6.0.1",
