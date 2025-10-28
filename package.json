@@ -52,7 +52,7 @@
         "@kdt310722/eslint-config": "^0.2.0",
         "@kdt310722/tsconfig": "^1.0.0",
         "@swc/core": "^1.13.21",
-        "@types/node": "^22.18.12",
+        "@types/node": "^24.9.1",
         "@types/ws": "^8.18.1",
         "changelogen": "^0.6.2",
         "eslint": "^9.38.0",
