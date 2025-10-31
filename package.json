@@ -60,7 +60,7 @@
         "lint-staged": "^16.2.6",
         "npm-check-updates": "^19.1.2",
         "only-allow": "^1.2.1",
-        "rimraf": "^6.0.1",
+        "rimraf": "^6.1.0",
         "simple-git-hooks": "^2.13.1",
         "tsup": "^8.5.0",
         "tsx": "^4.20.6",
