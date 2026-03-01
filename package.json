@@ -27,7 +27,7 @@
         "src"
     ],
     "engines": {
-        "node": ">=22.22.0"
+        "node": ">=24.14.0"
     },
     "publishConfig": {
         "access": "public"
