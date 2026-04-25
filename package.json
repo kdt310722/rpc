@@ -47,7 +47,7 @@
         "ws": "^8.20.0"
     },
     "devDependencies": {
-        "@commitlint/cli": "^20.5.0",
+        "@commitlint/cli": "^20.5.2",
         "@commitlint/config-conventional": "^20.5.0",
         "@kdt310722/eslint-config": "^0.2.0",
         "@kdt310722/tsconfig": "^1.0.0",
