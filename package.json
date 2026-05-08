@@ -57,7 +57,7 @@
         "changelogen": "^0.6.2",
         "eslint": "^9.39.4",
         "execa": "^9.6.1",
-        "lint-staged": "^17.0.2",
+        "lint-staged": "^17.0.3",
         "npm-check-updates": "^22.1.1",
         "only-allow": "^1.2.2",
         "rimraf": "^6.1.3",
