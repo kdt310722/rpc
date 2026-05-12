@@ -44,11 +44,11 @@
     },
     "dependencies": {
         "@kdt310722/utils": "^0.0.19",
-        "ws": "^8.20.0"
+        "ws": "^8.20.1"
     },
     "devDependencies": {
-        "@commitlint/cli": "^21.0.0",
-        "@commitlint/config-conventional": "^21.0.0",
+        "@commitlint/cli": "^21.0.1",
+        "@commitlint/config-conventional": "^21.0.1",
         "@kdt310722/eslint-config": "^0.2.0",
         "@kdt310722/tsconfig": "^1.0.0",
         "@swc/core": "^1.15.33",
