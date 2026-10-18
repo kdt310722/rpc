@@ -43,8 +43,8 @@ importers:
         specifier: ^9.39.5
         version: 9.39.5(jiti@2.4.2)
       execa:
-        specifier: ^10.1.1
-        version: 10.1.1
+        specifier: ^10.2.0
+        version: 10.2.0
       lint-staged:
         specifier: ^17.6.0
         version: 17.6.0
@@ -1863,8 +1863,8 @@ packages:
     resolution: {integrity: sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==}
     engines: {node: '>=0.10.0'}
 
-  execa@10.1.1:
-    resolution: {integrity: sha512-yJAC9ulsE6fU0K6wzJBIH+wI+KAtMeu6Ck8rs23OVzvEhqXjGADdI6K+YNIDAjcQQ6AwXTD96cKExJo6xFJXyg==}
+  execa@10.2.0:
+    resolution: {integrity: sha512-j1pFOVxaybMVCTNHSBuISL2KQcDS3KIE1wBmUp4n2X+1FgaQI2ZDJVy9TYxDyMCzYojRIMh9O8X/UoWZtxTJdw==}
     engines: {node: '>=22'}
 
   exsolve@1.0.7:
@@ -4177,7 +4177,7 @@ snapshots:
       '@vue/shared': 3.5.13
       entities: 4.5.0
       estree-walker: 2.0.2
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   '@vue/compiler-dom@3.5.13':
     dependencies:
@@ -4194,7 +4194,7 @@ snapshots:
       estree-walker: 2.0.2
       magic-string: 0.30.17
       postcss: 8.5.3
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   '@vue/compiler-ssr@3.5.13':
     dependencies:
@@ -5176,7 +5176,7 @@ snapshots:
 
   esutils@2.0.3: {}
 
-  execa@10.1.1:
+  execa@10.2.0:
     dependencies:
       '@sindresorhus/merge-streams': 4.0.0
       figures: 6.1.0
