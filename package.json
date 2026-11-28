@@ -47,8 +47,8 @@
         "ws": "^8.23.1"
     },
     "devDependencies": {
-        "@commitlint/cli": "^21.2.4",
-        "@commitlint/config-conventional": "^21.2.4",
+        "@commitlint/cli": "^21.3.0",
+        "@commitlint/config-conventional": "^21.3.0",
         "@kdt310722/eslint-config": "^0.2.0",
         "@kdt310722/tsconfig": "^1.0.0",
         "@swc/core": "^1.16.22",
@@ -57,7 +57,7 @@
         "changelogen": "^0.6.2",
         "eslint": "^9.39.5",
         "execa": "^10.2.1",
-        "lint-staged": "^17.6.2",
+        "lint-staged": "^17.6.3",
         "npm-check-updates": "^23.1.1",
         "only-allow": "^1.2.2",
         "rimraf": "^6.1.4",
